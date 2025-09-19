@@ -49,7 +49,7 @@ export function Navigation({ user }: NavigationProps) {
             href="/"
             className="font-bold text-lg text-primary hover:text-primary/90 transition-colors"
           >
-            Civic Reporter
+            JanSamvaad
           </Link>
 
           {/* Desktop Navigation */}

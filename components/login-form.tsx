@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { FcGoogle } from "react-icons/fc";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -141,7 +142,13 @@ export function LoginForm({
                 onClick={handleGoogleLogin}
                 disabled={isOAuthLoading}
               >
-                {isOAuthLoading ? "Redirecting..." : "Continue with Google"}
+                {isOAuthLoading ? (
+                  "Redirecting..."
+                ) : (
+                  <>
+                    <FcGoogle className="h-5 w-5" /> Continue with Google
+                  </>
+                )}
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
@@ -155,10 +162,7 @@ export function LoginForm({
             </div>
             <div className="mt-4 text-center text-sm">
               Go back to the{" "}
-              <Link
-                href="/"
-                className="underline underline-offset-4"
-              >
+              <Link href="/" className="underline underline-offset-4">
                 Home Page
               </Link>
             </div>
