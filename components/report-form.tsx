@@ -67,6 +67,7 @@ export function ReportForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isBackCamera, setIsBackCamera] = useState(true);
   const supabase = createClient();
 
   // Get current user and geolocation
@@ -137,37 +138,60 @@ export function ReportForm() {
       setLoading(true);
       console.log("Requesting camera access...");
 
-      // Start with most basic request
+      // Start with back camera (environment) first - PRIORITY
       let stream;
       try {
-        console.log("Trying basic camera request...");
+        console.log("Trying back camera (environment) first...");
         stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+          video: {
+            facingMode: { exact: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
         });
-        console.log("Basic camera request successful");
-      } catch (basicError) {
-        console.log("Basic camera failed:", basicError);
+        console.log("Back camera (environment) successful");
+        setIsBackCamera(true);
+      } catch (backError) {
+        console.log(
+          "Back camera failed, trying fallback environment:",
+          backError
+        );
 
-        // Try with specific constraints
+        // Try fallback environment camera
         try {
-          console.log("Trying with environment camera...");
           stream = await navigator.mediaDevices.getUserMedia({
             video: {
               facingMode: "environment",
             },
           });
-          console.log("Environment camera successful");
+          console.log("Environment camera fallback successful");
+          setIsBackCamera(true);
         } catch (envError) {
-          console.log("Environment camera failed:", envError);
+          console.log("Environment camera fallback failed:", envError);
 
-          // Last try with user camera
-          console.log("Trying with user camera...");
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: "user",
-            },
-          });
-          console.log("User camera successful");
+          // Last resort - front camera
+          try {
+            console.log("Trying front camera as last resort...");
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                facingMode: "user",
+              },
+            });
+            console.log("Front camera successful");
+            setIsBackCamera(false);
+          } catch (frontError) {
+            console.log(
+              "Front camera failed, trying basic request:",
+              frontError
+            );
+
+            // Final fallback - basic request
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+            });
+            console.log("Basic camera request successful");
+            setIsBackCamera(false);
+          }
         }
       }
 
@@ -255,6 +279,7 @@ export function ReportForm() {
       console.log("Capturing image...", {
         videoWidth: video.videoWidth,
         videoHeight: video.videoHeight,
+        isBackCamera: isBackCamera,
       });
 
       // Set canvas dimensions to match video
@@ -267,8 +292,19 @@ export function ReportForm() {
         return;
       }
 
+      // Apply horizontal flip for front camera only
+      if (!isBackCamera) {
+        context.scale(-1, 1);
+        context.translate(-canvas.width, 0);
+      }
+
       // Draw the video frame to canvas
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Reset transform if it was applied
+      if (!isBackCamera) {
+        context.setTransform(1, 0, 0, 1, 0, 0);
+      }
 
       // Convert to data URL with high quality
       const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
@@ -506,7 +542,7 @@ export function ReportForm() {
                     muted
                     className={`w-full h-48 object-cover rounded ${
                       cameraActive ? "block" : "hidden"
-                    }`}
+                    } ${!isBackCamera ? "scale-x-[-1]" : ""}`}
                   />
 
                   {cameraActive ? (
@@ -523,6 +559,11 @@ export function ReportForm() {
                       <Button variant="outline" onClick={stopCamera}>
                         Cancel
                       </Button>
+                      {cameraActive && (
+                        <span className="text-xs text-gray-500 self-center">
+                          Using: {isBackCamera ? "Back" : "Front"} Camera
+                        </span>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-2">
