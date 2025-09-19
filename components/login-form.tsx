@@ -60,6 +60,7 @@ export function LoginForm({
     setError(null);
     try {
       const origin = window.location.origin;
+      console.log(origin);
       const redirectTo = `${origin}/auth/callback`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",

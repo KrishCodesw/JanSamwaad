@@ -9,11 +9,11 @@ export function LogoutButton() {
 
   const logout = async () => {
     const supabase = createClient();
-    console.log("URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.log(
-      "KEY:",
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY
-    );
+    // console.log("URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+    // console.log(
+    //   "KEY:",
+    //   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY
+    // );
 
     await supabase.auth.signOut();
     router.push("/auth/login");
