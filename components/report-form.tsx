@@ -108,17 +108,122 @@ export function ReportForm() {
 
   // Camera functions
   const startCamera = async () => {
-    if (!videoRef.current) return;
+    console.log("startCamera called");
+
+    // Wait a bit for React to render the video element
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    if (!videoRef.current) {
+      console.error("Video ref is null after waiting");
+      setError(
+        "Video element not ready. Please refresh the page and try again."
+      );
+      return;
+    }
+
+    console.log("Video element found:", videoRef.current);
+
+    // Check if browser supports camera
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.error("getUserMedia not supported");
+      setError(
+        "Your browser doesn't support camera access. Please try uploading an image instead."
+      );
+      return;
+    }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setError(null);
+      setLoading(true);
+      console.log("Requesting camera access...");
+
+      // Start with most basic request
+      let stream;
+      try {
+        console.log("Trying basic camera request...");
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+        console.log("Basic camera request successful");
+      } catch (basicError) {
+        console.log("Basic camera failed:", basicError);
+
+        // Try with specific constraints
+        try {
+          console.log("Trying with environment camera...");
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "environment",
+            },
+          });
+          console.log("Environment camera successful");
+        } catch (envError) {
+          console.log("Environment camera failed:", envError);
+
+          // Last try with user camera
+          console.log("Trying with user camera...");
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: "user",
+            },
+          });
+          console.log("User camera successful");
+        }
+      }
+
+      if (!stream) {
+        throw new Error("No camera stream available");
+      }
+
+      console.log("Setting video source...");
       videoRef.current.srcObject = stream;
-      setCameraActive(true);
+
+      // Wait for video to be ready
+      videoRef.current.onloadedmetadata = () => {
+        console.log("Video metadata loaded, playing video...");
+        videoRef.current
+          ?.play()
+          .then(() => {
+            console.log("Video playing successfully");
+            setCameraActive(true);
+            setLoading(false);
+          })
+          .catch((playError) => {
+            console.error("Error playing video:", playError);
+            setError("Could not start video playback");
+            setLoading(false);
+          });
+      };
+
+      videoRef.current.onerror = (err) => {
+        console.error("Video error:", err);
+        setError("Video playback error");
+        setLoading(false);
+        setCameraActive(false);
+      };
     } catch (err) {
       console.error("Error accessing camera:", err);
-      setError(
-        "Could not access camera. Please try uploading an image instead."
-      );
+      setLoading(false);
+      setCameraActive(false);
+
+      let errorMessage = "Could not access camera. ";
+      if (err instanceof Error) {
+        if (err.name === "NotAllowedError") {
+          errorMessage +=
+            "Camera permission denied. Please allow camera access and try again.";
+        } else if (err.name === "NotFoundError") {
+          errorMessage += "No camera found on this device.";
+        } else if (err.name === "NotSupportedError") {
+          errorMessage += "Camera not supported on this device.";
+        } else {
+          errorMessage += err.message;
+        }
+      } else {
+        errorMessage += "Unknown error occurred.";
+      }
+      errorMessage += " Please try uploading an image instead.";
+
+      setError(errorMessage);
     }
   };
 
@@ -132,21 +237,57 @@ export function ReportForm() {
   };
 
   const captureImage = () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current || !canvasRef.current) {
+      setError("Camera or canvas not ready. Please try again.");
+      return;
+    }
 
-    const canvas = canvasRef.current;
     const video = videoRef.current;
+    const canvas = canvasRef.current;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas
-      .getContext("2d")
-      ?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // Check if video has loaded and has dimensions
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      setError("Camera not ready. Please wait a moment and try again.");
+      return;
+    }
 
-    const dataUrl = canvas.toDataURL("image/jpeg");
-    setCapturedImage(dataUrl);
-    setImageUrl(dataUrl);
-    stopCamera();
+    try {
+      console.log("Capturing image...", {
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight,
+      });
+
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const context = canvas.getContext("2d");
+      if (!context) {
+        setError("Could not get canvas context. Please try again.");
+        return;
+      }
+
+      // Draw the video frame to canvas
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Convert to data URL with high quality
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+
+      console.log("Image captured successfully", {
+        dataUrlLength: dataUrl.length,
+        dataUrlStart: dataUrl.substring(0, 50),
+      });
+
+      // Set both states to ensure image is properly stored
+      setCapturedImage(dataUrl);
+      setImageUrl(dataUrl);
+
+      // Stop camera after successful capture
+      stopCamera();
+    } catch (err) {
+      console.error("Error capturing image:", err);
+      setError("Failed to capture image. Please try again.");
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,11 +297,21 @@ export function ReportForm() {
     const reader = new FileReader();
     reader.onload = (event) => {
       if (typeof event.target?.result === "string") {
-        setCapturedImage(event.target.result);
-        setImageUrl(event.target.result);
+        const dataUrl = event.target.result;
+        setCapturedImage(dataUrl);
+        setImageUrl(dataUrl);
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setCapturedImage(null);
+    setImageUrl("");
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const submit = async () => {
@@ -173,18 +324,21 @@ export function ReportForm() {
     setError(null);
 
     try {
+      const submitData = {
+        description: description.trim(),
+        landmark: landmark.trim(),
+        flagged,
+        tags: [category],
+        latitude: lat,
+        longitude: lng,
+        images: imageUrl ? [imageUrl] : [], // This will include the captured image
+        reporterEmail: userEmail,
+      };
+
       const res = await fetch("/api/issues", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          description: description.trim(),
-          flagged,
-          tags: [category],
-          latitude: lat,
-          longitude: lng,
-          images: imageUrl ? [imageUrl] : [],
-          reporterEmail: userEmail,
-        }),
+        body: JSON.stringify(submitData),
       });
 
       const data = await res.json();
@@ -331,38 +485,44 @@ export function ReportForm() {
                   <img
                     src={capturedImage}
                     alt="Captured"
-                    className="max-w-full h-48 object-cover rounded"
+                    className="max-w-full h-48 object-cover rounded mx-auto"
                   />
                   <Button
                     variant="outline"
                     size="sm"
                     className="absolute top-2 right-2"
-                    onClick={() => {
-                      setCapturedImage(null);
-                      setImageUrl("");
-                    }}
+                    onClick={removeImage}
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
               ) : (
                 <div className="text-center space-y-3">
+                  {/* Video element - always rendered but hidden when not active */}
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className={`w-full h-48 object-cover rounded ${
+                      cameraActive ? "block" : "hidden"
+                    }`}
+                  />
+
                   {cameraActive ? (
-                    <div className="space-y-2">
-                      <video
-                        ref={videoRef}
-                        autoPlay
-                        className="w-full h-48 object-cover rounded"
-                      />
-                      <div className="flex gap-2 justify-center">
-                        <Button onClick={captureImage}>
-                          <Camera className="h-4 w-4 mr-2" />
-                          Capture
-                        </Button>
-                        <Button variant="outline" onClick={stopCamera}>
-                          Cancel
-                        </Button>
-                      </div>
+                    <div className="flex gap-2 justify-center">
+                      <Button
+                        onClick={captureImage}
+                        disabled={
+                          !videoRef.current || videoRef.current.videoWidth === 0
+                        }
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        Capture
+                      </Button>
+                      <Button variant="outline" onClick={stopCamera}>
+                        Cancel
+                      </Button>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -370,13 +530,18 @@ export function ReportForm() {
                         Add a photo to help officials understand the issue
                       </p>
                       <div className="flex gap-2 justify-center">
-                        <Button onClick={startCamera} variant="outline">
+                        <Button
+                          onClick={startCamera}
+                          variant="outline"
+                          disabled={loading}
+                        >
                           <Camera className="h-4 w-4 mr-2" />
-                          Take Photo
+                          {loading ? "Opening Camera..." : "Take Photo"}
                         </Button>
                         <Button
                           onClick={() => fileInputRef.current?.click()}
                           variant="outline"
+                          disabled={loading}
                         >
                           <Upload className="h-4 w-4 mr-2" />
                           Upload
