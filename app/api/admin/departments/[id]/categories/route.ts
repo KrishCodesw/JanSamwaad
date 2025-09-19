@@ -1,16 +1,16 @@
-import { NextResponse } from "next/server";
-import { NextRequest } from "next/server"; // ✅ keep this for Next.js API routes
+import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-// ✅ Changed Request -> NextRequest
+// This POST handler adds a new category to a department.
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createClient();
+  const { id } = await params; // Await the params
 
   try {
-    // Check if user is admin/official
+    // Check if user is admin or official.
     const {
       data: { user },
       error: authError,
@@ -46,7 +46,6 @@ export async function POST(
       );
     }
 
-    // ✅ request.json() -> req.json()
     const body = await req.json();
     const { category } = body;
 
@@ -54,9 +53,10 @@ export async function POST(
       return NextResponse.json({ error: "Invalid category" }, { status: 400 });
     }
 
+    // Insert the new category into the database.
     const { error: insertError } = await supabase
       .from("department_categories")
-      .insert({ department_id: params.id, category });
+      .insert({ department_id: id, category }); // Use awaited id
 
     if (insertError) {
       console.error("Category insert error:", insertError);
@@ -76,14 +76,16 @@ export async function POST(
   }
 }
 
-// ✅ Changed Request -> NextRequest
+// This DELETE handler removes a category from a department.
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createClient();
+  const { id } = await params; // Await the params
 
   try {
+    // Check if user is admin or official.
     const {
       data: { user },
       error: authError,
@@ -119,7 +121,7 @@ export async function DELETE(
       );
     }
 
-    // ✅ request.url -> req.url
+    // Get the category to delete from the URL search parameters.
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
 
@@ -130,10 +132,11 @@ export async function DELETE(
       );
     }
 
+    // Delete the category from the database.
     const { error: deleteError } = await supabase
       .from("department_categories")
       .delete()
-      .eq("department_id", params.id)
+      .eq("department_id", id) // Use awaited id
       .eq("category", category);
 
     if (deleteError) {
@@ -154,18 +157,20 @@ export async function DELETE(
   }
 }
 
-// ✅ Already correct
+// This GET handler retrieves all categories for a given department.
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await createClient();
+  const { id } = await params; // Await the params
 
   try {
+    // Fetch categories for the department.
     const { data: categories, error } = await supabase
       .from("department_categories")
       .select("category")
-      .eq("department_id", params.id)
+      .eq("department_id", id) // Use awaited id
       .order("category");
 
     if (error) {
@@ -176,6 +181,7 @@ export async function GET(
       );
     }
 
+    // Return the categories as an array of strings.
     return NextResponse.json(categories.map((c) => c.category));
   } catch (error) {
     console.error("Department categories error:", error);
