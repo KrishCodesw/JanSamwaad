@@ -46,24 +46,27 @@ export default async function Home() {
           {/* Quick Stats or Features */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
             <div className="text-center p-6 border border-border rounded-lg">
-              <div className="text-2xl font-bold text-primary">📍</div>
-              <h3 className="font-semibold mt-2">Location-Based</h3>
+              <div className="text-2xl font-bold text-primary"></div>
+              <h3 className="font-semibold mt-2">NGO-Partnerships</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Report and view issues based on your location
+                Collaborating with NGO's with aligned vision to spread awareness
+                about the platform.
               </p>
             </div>
             <div className="text-center p-6 border border-border rounded-lg">
-              <div className="text-2xl font-bold text-primary">🏛️</div>
+              <div className="text-2xl font-bold text-primary"></div>
               <h3 className="font-semibold mt-2">Official Response</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Track progress as local officials address issues
+                Track progress as local officials address issues and verify them
+                as soon as their resolved.
               </p>
             </div>
             <div className="text-center p-6 border border-border rounded-lg">
-              <div className="text-2xl font-bold text-primary">👥</div>
-              <h3 className="font-semibold mt-2">Community Driven</h3>
+              <div className="text-2xl font-bold text-primary"></div>
+              <h3 className="font-semibold mt-2">Timely informed updates</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Vote on issues to help prioritize community needs
+                Real-time Updates: Constant flow of information via email and
+                SMS
               </p>
             </div>
           </div>
