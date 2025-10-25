@@ -5,7 +5,15 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ThumbsUp, MapPin, Clock, Flag, Eye, User } from "lucide-react";
+import {
+  ThumbsUp,
+  MapPin,
+  Clock,
+  Flag,
+  Eye,
+  User,
+  ChevronDown,
+} from "lucide-react";
 import Link from "next/link";
 
 type StatusChange = {
@@ -72,6 +80,7 @@ export function IssueCard({
   const latestStatusChange = getLatestStatusChange(issue);
   const [upvoting, setUpvoting] = useState(false);
   const [hasUpvoted, setHasUpvoted] = useState(false);
+  const [isImageVisible, setIsImageVisible] = useState(false);
   const [voteCount, setVoteCount] = useState(issue.vote_count || 0);
 
   const handleUpvote = async () => {
@@ -174,7 +183,7 @@ export function IssueCard({
           {issue.description}
         </p>
 
-        {issue.images && issue.images.length > 0 && (
+        {/* {issue.images && issue.images.length > 0 && (
           <div className="rounded-lg overflow-hidden">
             <Image
               src={issue.images[0].url}
@@ -184,8 +193,45 @@ export function IssueCard({
               className="w-full h-48 object-cover"
             />
           </div>
-        )}
+        )} */}
+        {/* --- CHANGED: This is the new animated toggle block --- */}
+        {issue.images && issue.images.length > 0 && (
+          <div>
+            {/* 1. The Toggle Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsImageVisible(!isImageVisible)}
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary p-0 h-auto"
+            >
+              <span></span>
+              <Eye
+                className={`h-4 w-4 transition-transform duration-300 ${
+                  isImageVisible ? "rotate-180" : ""
+                }`}
+              />
+            </Button>
 
+            {/* 2. The Animated Container */}
+            <div
+              className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                isImageVisible ? "max-h-48 mt-2" : "max-h-0"
+              }`}
+            >
+              {/* This inner div keeps the rounded corners */}
+              <div className="rounded-lg overflow-hidden">
+                <Image
+                  src={issue.images[0].url}
+                  alt="Issue photo"
+                  width={400}
+                  height={200}
+                  className="w-full h-48 object-cover"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+        {/* --- END OF CHANGED BLOCK --- */}
         {/* Latest status change */}
         {latestStatusChange && (
           <div className="bg-muted/50 dark:bg-gray-800 p-2 rounded-md text-xs dark:text-gray-400">
