@@ -27,7 +27,7 @@ type Issue = {
   status: string;
   description: string;
   tags?: string[];
-  image_url?: string;
+  images?: { url: string }[];
   flagged?: boolean;
   created_at: string;
   latitude: number;
@@ -89,9 +89,9 @@ export default function IssuesListClient() {
   const fetchIssues = async (lat?: number, lng?: number) => {
     try {
       const endpoint =
-        lat && lng
-          ? `/api/issues/near?lat=${lat}&lng=${lng}&radius=5000`
-          : "/api/admin/issues";
+        // lat && lng
+        // ? `/api/issues/near?lat=${lat}&lng=${lng}&radius=5000`:
+        "/api/issues/public";
 
       const res = await fetch(endpoint, { cache: "no-store" });
       if (res.ok) {

@@ -20,6 +20,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.supabase.co" },
     ],
   },
+
+  
   // Optimize for production
   compress: true,
   poweredByHeader: false,
@@ -29,11 +31,16 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
+        source: "/:path*",
         headers: [
           {
             key: "X-Frame-Options",
             value: "DENY",
+          },
+          {
+            key: 'Content-Security-Policy',
+            value:
+              "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:",
           },
           {
             key: "X-Content-Type-Options",

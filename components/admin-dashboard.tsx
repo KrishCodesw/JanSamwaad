@@ -36,6 +36,7 @@ import {
   ResponsiveContainer,
   Area,
   AreaChart,
+  Legend,
 } from "recharts";
 import {
   TrendingUp,
@@ -428,15 +429,17 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Government Admin Dashboard</h1>
-          <p className="text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-4 w-full min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-bold whitespace-nowrap">
+            Government Admin Dashboard
+          </h1>
+          <p className="text-muted-foreground whitespace-nowrap">
             Manage civic issues and government announcements
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto overflow-x-auto justify-center sm:justify-end">
           <Button
             variant={activeTab === "overview" ? "default" : "outline"}
             onClick={() => setActiveTab("overview")}
@@ -476,7 +479,7 @@ export default function AdminDashboard() {
       {activeTab === "overview" && stats && (
         <div className="space-y-6">
           {/* Key Metrics */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 w-full">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
@@ -537,7 +540,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Charts */}
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 w-full justify-center">
             <Card>
               <CardHeader>
                 <CardTitle>Issues by Status</CardTitle>
@@ -545,23 +548,26 @@ export default function AdminDashboard() {
                   Distribution of current issue statuses
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+              <CardContent className="mx-auto">
+                <ResponsiveContainer width="100%" height={400} className="mt-4">
                   <PieChart>
                     <Pie
                       data={statusData}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
-                      outerRadius={120}
+                      outerRadius={100}
                       paddingAngle={5}
                       dataKey="value"
+                      nameKey="name"
+                      label
                     >
                       {statusData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
                     </Pie>
                     <Tooltip />
+                    <Legend verticalAlign="bottom" height={36} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -574,14 +580,20 @@ export default function AdminDashboard() {
                   Most common types of reported issues
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
+              <CardContent className="mx-auto">
+                <ResponsiveContainer width="100%" height={400} className="mt-4">
                   <BarChart data={categoryData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
+                    <XAxis
+                      dataKey="name"
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis width={40} />
                     <Tooltip />
-                    <Bar dataKey="value" fill="#3b82f6" />
+                    <Legend verticalAlign="top" height={36} />
+                    <Bar dataKey="value" fill="#3b82f6" name="Issues" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -598,16 +610,27 @@ export default function AdminDashboard() {
                     Daily issue reporting activity
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
+                <CardContent className="mx-auto">
+                  <ResponsiveContainer
+                    width="100%"
+                    height={400}
+                    className="mt-4"
+                  >
                     <AreaChart data={stats.recent_issues_trend}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
+                      <XAxis
+                        dataKey="date"
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                      />
+                      <YAxis width={40} />
                       <Tooltip />
+                      <Legend verticalAlign="top" height={36} />
                       <Area
                         type="monotone"
                         dataKey="count"
+                        name="Issues Reported"
                         stroke="#3b82f6"
                         fill="#3b82f6"
                         fillOpacity={0.3}
@@ -622,14 +645,14 @@ export default function AdminDashboard() {
 
       {/* Issues Management Tab */}
       {activeTab === "issues" && (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
           {/* Filters */}
           <Card>
             <CardHeader>
               <CardTitle>Filter Issues</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                 <div>
                   <Label>Status</Label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -724,7 +747,7 @@ export default function AdminDashboard() {
           )}
 
           {/* Issues List */}
-          <div className="space-y-4">
+          <div className="space-y-4 w-full">
             {loading ? (
               <Card>
                 <CardContent className="py-12 text-center">
@@ -817,7 +840,7 @@ export default function AdminDashboard() {
                       </div>
                     )}
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 w-full">
                       <Select
                         value={issue.status}
                         onValueChange={(newStatus) =>
@@ -859,7 +882,7 @@ export default function AdminDashboard() {
 
       {/* Announcements Tab */}
       {activeTab === "announcements" && (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -976,7 +999,7 @@ export default function AdminDashboard() {
           )}
 
           {/* Active Announcements */}
-          <div className="space-y-4">
+          <div className="space-y-4 w-full">
             {announcements.map((announcement) => (
               <Card key={announcement.id}>
                 <CardHeader>
@@ -1016,7 +1039,7 @@ export default function AdminDashboard() {
 
       {/* Users Management Tab */}
       {activeTab === "users" && (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
           {/* User Filters */}
           <Card>
             <CardHeader>
@@ -1047,7 +1070,7 @@ export default function AdminDashboard() {
           </Card>
 
           {/* Users List */}
-          <div className="space-y-4">
+          <div className="space-y-4 w-full">
             {usersLoading ? (
               <Card>
                 <CardContent className="py-12 text-center">
@@ -1070,7 +1093,7 @@ export default function AdminDashboard() {
                         <CardTitle className="text-base">
                           {user.display_name || "Unknown User"}
                         </CardTitle>
-                        <div className="flex gap-2 mt-2">
+                        <div className="flex flex-wrap gap-2 mt-2">
                           <Badge
                             variant={
                               user.role === "admin"
@@ -1101,7 +1124,7 @@ export default function AdminDashboard() {
                   </CardHeader>
 
                   <CardContent>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 w-full">
                       <Select
                         value={user.role}
                         onValueChange={(newRole) =>
@@ -1137,7 +1160,7 @@ export default function AdminDashboard() {
 
       {/* Departments Management Tab */}
       {activeTab === "departments" && (
-        <div className="space-y-6">
+        <div className="space-y-6 w-full">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -1206,7 +1229,7 @@ export default function AdminDashboard() {
           )}
 
           {/* Departments List */}
-          <div className="space-y-4">
+          <div className="space-y-4 w-full">
             {departmentsLoading ? (
               <Card>
                 <CardContent className="py-12 text-center">
@@ -1234,7 +1257,7 @@ export default function AdminDashboard() {
                         <p className="text-sm text-muted-foreground mt-1">
                           {department.description || "No description"}
                         </p>
-                        <div className="flex gap-2 mt-2">
+                        <div className="flex flex-wrap gap-2 mt-2">
                           <Badge variant="outline">
                             {department.officials_count} officials
                           </Badge>
@@ -1250,7 +1273,7 @@ export default function AdminDashboard() {
                   </CardHeader>
 
                   <CardContent>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 w-full">
                       <Button
                         variant="outline"
                         size="sm"

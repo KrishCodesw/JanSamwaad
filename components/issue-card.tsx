@@ -22,7 +22,7 @@ type Issue = {
   status: string;
   description: string;
   tags?: string[];
-  image_url?: string;
+  images?: { url: string }[];
   flagged?: boolean;
   created_at: string;
   latitude?: number;
@@ -102,7 +102,7 @@ export function IssueCard({
     if (diffInDays < 7) return `${diffInDays}d ago`;
     return date.toLocaleDateString();
   };
-
+  console.log("ISSUE DATA:", issue); // <--- ADD THIS
   return (
     <Card
       className={`hover:shadow-lg transition-all duration-200 hover:scale-[1.02] dark:bg-gray-900 dark:hover:bg-gray-800 dark:border-gray-700 ${
@@ -174,10 +174,10 @@ export function IssueCard({
           {issue.description}
         </p>
 
-        {issue.image_url && (
+        {issue.images && issue.images.length > 0 && (
           <div className="rounded-lg overflow-hidden">
             <Image
-              src={issue.image_url}
+              src={issue.images[0].url}
               alt="Issue photo"
               width={400}
               height={200}
