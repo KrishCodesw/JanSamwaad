@@ -1,7 +1,12 @@
 // components/home-page-content.tsx
 "use client";
 
-import IssuesMap from "@/components/issues-map";
+import dynamic from "next/dynamic";
+import MapSkeleton from "@/components/map-skeleton";
+const IssuesMap = dynamic(() => import("@/components/issues-map"), {
+  ssr: false,
+  loading: () => <MapSkeleton className="w-full" />,
+});
 import Link from "next/link";
 import { Footer } from "@/components/footer";
 

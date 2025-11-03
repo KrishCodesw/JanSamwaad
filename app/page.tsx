@@ -1,15 +1,52 @@
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
-import IssuesMap from "@/components/issues-map";
+import dynamic from "next/dynamic";
+import MapSkeleton from "@/components/map-skeleton";
+const IssuesMap = dynamic(() => import("@/components/issues-map"), {
+
+  loading: () => <MapSkeleton className="w-full" />,
+});
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import WhatIsJanSamvaad from "@/components/what-is-jansamvaad";
 
 export default async function Home() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
+  
+  const defaultUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "JanSamvaad",
+    "description": "Crowdsourced civic issue reporting and resolution platform",
+    "url": defaultUrl,
+    "applicationCategory": "CivicApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "featureList": [
+      "Report civic issues",
+      "Track issue resolution",
+      "Interactive map view",
+      "Community upvoting",
+      "Real-time notifications"
+    ]
+  };
+  
   return (
-    <main className="min-h-screen flex flex-col">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <main className="min-h-screen flex flex-col">
       <Navigation user={user} />
       <div className="flex-1 w-full flex flex-col gap-8 items-center">
         <div className="flex-1 flex flex-col gap-8 max-w-5xl p-5 w-full">
@@ -43,7 +80,7 @@ export default async function Home() {
             <IssuesMap className="w-full" />
           </div>
 
-          {/* Quick Stats or Features */}
+          {/* Quick Stats or Features (original minimal style, no emojis) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
             <div className="text-center p-6 border border-border rounded-lg">
               <div className="text-2xl font-bold text-primary"></div>
@@ -72,7 +109,9 @@ export default async function Home() {
           </div>
         </div>
       </div>
+      <WhatIsJanSamvaad className="mt-8" />
       <Footer />
     </main>
+    </>
   );
 }
