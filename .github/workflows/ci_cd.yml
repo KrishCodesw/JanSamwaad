@@ -3,12 +3,12 @@ name: CI/CD JanSamvaad
 on: 
   push:
     branches: [ main ]
-  pull_request: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      -name: Checkout code 
+    - name: Checkout code 
       uses: actions/checkout@v4
-      
