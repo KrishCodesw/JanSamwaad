@@ -1,105 +1,131 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+JanSamwaad – Crowdsourced Civic Issue Reporting
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+JanSamwaad is a civic-tech platform that enables citizens to report local civic issues, see them on a live map, and track how authorities respond over time. The goal is to make everyday issues like potholes, garbage, broken street lights, and water problems visible, transparent, and easier to resolve collaboratively.
 
-## Features
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+1. Problem and vision
 
-## Demo
+The problem
+Citizens face everyday civic issues but current channels are often:
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+Fragmented (different numbers/apps for different departments)
 
-## Deploy to Vercel
+Non-transparent (no clear status, no way to track progress)
 
-Vercel deployment will guide you through creating a Supabase account and project.
+Slow (no prioritization, no data-driven planning)
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+This leads to frustration, duplicate complaints, and poor accountability.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+The vision
+JanSamwaad aims to become a single unified interface where:
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+Citizens can easily report local problems with location and photos
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+Issues are mapped, prioritized, and routed to the right authority
 
-## Clone and run locally
+Progress is visible to everyone, building trust and accountability
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+NGOs and civic groups can use data to drive campaigns and advocacy
 
-2. Create a Next.js app using the Supabase Starter template npx command
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+2. Core features
+Citizen features
+Report an Issue
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+Submit a title, description, category (pothole, garbage, water, electricity, etc.)
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+Attach one photo as evidence
 
-3. Use `cd` to change into the app's directory
+The exact location is auto-fetched and submitted with the report
 
-   ```bash
-   cd with-supabase-app
-   ```
+See a confirmation with a unique issue ID
 
-4. Rename `.env.example` to `.env.local` and update the following:
+Issues Near You
 
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=[INSERT SUPABASE PROJECT API ANON KEY]
-   ```
+Interactive map (Leaflet/OpenStreetMap style) showing issues around the user
 
-   Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
+Colored markers or pins by status (e.g., Open / In Progress / Resolved)
 
-5. You can now run the Next.js local development server:
+Quick filters (category, status, distance)
 
-   ```bash
-   npm run dev
-   ```
+List view of nearby issues with concise cards
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+My Issues
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+Personal dashboard with all issues reported by the logged-in user
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+Status timeline for each issue (Submitted → In Progress → Resolved → Verified)
 
-## Feedback and issues
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+Real-time updates
 
-## More Supabase examples
+Notifications (email/SMS/WhatsApp, depending on your implementation) when:
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+An issue is created
+
+Status changes (acknowledged, in progress, resolved)
+
+Deep links that open directly to the issue page
+
+Admin / “Official” features
+Issue management dashboard
+
+Secure login for admins/officials through RBAC (Role based access control)
+
+Table of all issues with sorting and filters (status, category & date)
+
+Quick view of details and photos
+
+Ability to change status and add public updates
+
+Issue lifecycle
+
+Configurable status flow, for example:
+
+New → Acknowledged → In Progress → Resolved → Verified by Citizen / Rejected
+
+Status history with timestamps
+
+Optional assignment to departments, wards, or officers (In progress - currently under development)
+
+Moderation & validation
+
+Queue of newly submitted issues that can be quickly validated
+
+Option to reject spam/test issues with a reason visible to the citizen
+
+Basic checks like minimum description, at least one evidence field, etc.
+
+NGO & community features (optional / roadmap)
+Read-only dashboards for partner NGOs to monitor issues in their domain or geographies
+
+Ability to “adopt” issues, mark involvement, or add NGO-specific updates
+
+Aggregate statistics for campaigns (e.g., “100 garbage dumps cleaned in Ward X”)
+
+
+System Architecture
+
+
+High-level
+Frontend: Next.js (React), TypeScript, Tailwind CSS, Leaflet (OpenStreetMap) for mapping.​
+
+Backend: Next.js API routes or Node.js/Express with REST endpoints.​
+
+Database: Supabase (PostgreSQL).​
+
+Auth: Email/password , Google auth plus admin roles.​
+
+Notifications: Email provider (e.g., SMTP, Resend), optional SMS/WhatsApp integration.​
+
+Logical components
+Client App – UI components, forms, map view, state management.
+
+API Layer – authentication, authorization, issue CRUD, listing & search, admin actions.
+
+Geo Services – geospatial queries (issues near location/map bounds), clustering/pagination.​
+
+Notification Service – triggered on issue creation and status changes.
+
+Admin Panel – protected pages and endpoints for validation and lifecycle management.
