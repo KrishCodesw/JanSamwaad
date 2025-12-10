@@ -2,23 +2,6 @@
 
 > JanSamwaad is a civic-tech platform that enables citizens to report local civic issues, see them on a live map, and track how authorities respond over time.
 
----
-
-## 📋 Table of Contents
-
-- [About](#about)
-- [Problem and Vision](#problem-and-vision)
-  - [The Problem](#the-problem)
-  - [The Vision](#the-vision)
-- [Core Features](#core-features)
-  - [Citizen Features](#citizen-features)
-  - [Admin/Official Features](#adminofficial-features)
-  - [NGO & Community Features](#ngo--community-features)
-- [System Architecture](#system-architecture)
-  - [High-Level Overview](#high-level-overview)
-  - [Logical Components](#logical-components)
-
----
 
 ## About
 
@@ -140,29 +123,31 @@ New → Acknowledged → In Progress → Resolved → Verified by Citizen / Reje
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started (Local Setup)
 
 1. Clone the repo
-
+```
 git clone https://github.com/your-username/jansamwaad.git
 cd jansamwaad
+```
 
 2. Install dependencies
-
+```
 npm install
 # or
 pnpm install
+```
 
 3. Create a .env.local file (or equivalent) with values
 
 4. Run database migrations (prisma commands)
 
 5. Start development server 
-
+```
 npm run dev
+```
 
-
-## 🤝 Contributing
+##  Contributing
 
 Contributing, suggestions, and issue reports are welcome.
 
