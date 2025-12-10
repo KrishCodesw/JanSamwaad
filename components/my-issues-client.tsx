@@ -29,6 +29,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 type StatusChange = {
   from_status: string | null;
@@ -101,6 +102,8 @@ const formatStatus = (status: string) => {
 export default function MyIssuesClient() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isImageVisible, setIsImageVisible] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -330,6 +333,44 @@ export default function MyIssuesClient() {
                     {issue.description}
                   </p>
 
+                  {issue.images && issue.images.length > 0 && (
+                    <div>
+                      {/* 1. The Toggle Button */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsImageVisible(!isImageVisible)}
+                        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary p-0 h-auto"
+                      >
+                        <span></span>
+                        <Eye
+                          className={`h-4 w-4 transition-transform duration-300 ${
+                            isImageVisible ? "rotate-180" : ""
+                          }`}
+                        />
+                      </Button>
+
+                      {/* 2. The Animated Container */}
+                      <div
+                        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                          isImageVisible ? "max-h-48 mt-2" : "max-h-0"
+                        }`}
+                      >
+                        {/* This inner div keeps the rounded corners */}
+                        <div className="rounded-lg overflow-hidden">
+                          <Image
+                            src={issue.images[0].url}
+                            alt="Issue photo"
+                            width={400}
+                            height={200}
+                            className="w-full h-48 object-cover"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {/* --- END OF CHANGED BLOCK --- */}
+
                   {issue.tags && issue.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {issue.tags.map((tag, index) => (
@@ -379,12 +420,12 @@ export default function MyIssuesClient() {
                     <div className="flex items-center gap-4">
                       {issue.vote_count && (
                         <span className="text-muted-foreground dark:text-gray-400">
-                          👍 {issue.vote_count} votes
+                          {issue.vote_count} votes
                         </span>
                       )}
                       {issue.images && issue.images.length > 0 && (
                         <span className="text-muted-foreground dark:text-gray-400">
-                          📷 {issue.images.length} image
+                          {issue.images.length} image
                           {issue.images.length > 1 ? "s" : ""}
                         </span>
                       )}

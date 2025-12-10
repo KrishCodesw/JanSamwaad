@@ -1,16 +1,30 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Manrope } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
-const defaultUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+const defaultUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000");
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "JanSamvaad - Crowdsourced Civic Issue Reporting & Resolution Platform",
-  description: "JanSamvaad is a crowdsourced civic issue reporting and resolution platform. Report local issues, track progress, and collaborate with officials to improve your community. Join thousands of citizens making a difference.",
-  keywords: ["civic issues", "community reporting", "local government", "public issues", "citizen engagement", "issue tracking", "civic engagement", "community improvement"],
+  title:
+    "JanSamvaad - Crowdsourced Civic Issue Reporting & Resolution Platform",
+  description:
+    "JanSamvaad is a crowdsourced civic issue reporting and resolution platform. Report local issues, track progress, and collaborate with officials to improve your community. Join thousands of citizens making a difference.",
+  keywords: [
+    "civic issues",
+    "community reporting",
+    "local government",
+    "public issues",
+    "citizen engagement",
+    "issue tracking",
+    "civic engagement",
+    "community improvement",
+  ],
   authors: [{ name: "JanSamvaad" }],
   creator: "JanSamvaad",
   publisher: "JanSamvaad",
@@ -21,7 +35,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "JanSamvaad - Crowdsourced Civic Issue Reporting & Resolution",
-    description: "Report local civic issues, track progress, and collaborate with officials to improve your community. Join thousands of citizens making a difference.",
+    description:
+      "Report local civic issues, track progress, and collaborate with officials to improve your community. Join thousands of citizens making a difference.",
     url: defaultUrl,
     siteName: "JanSamvaad",
     images: [
@@ -38,7 +53,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "JanSamvaad - Crowdsourced Civic Issue Reporting",
-    description: "Report local civic issues, track progress, and improve your community.",
+    description:
+      "Report local civic issues, track progress, and improve your community.",
     images: ["/twitter-image.png"],
   },
   robots: {
@@ -72,6 +88,11 @@ const geistSans = Geist({
   display: "swap",
   subsets: ["latin"],
 });
+const manrope = Manrope({
+  variable: "--font-manrope",
+  display: "swap",
+  subsets: ["latin"],
+});
 
 export default function RootLayout({
   children,
@@ -80,7 +101,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
+      <body className={`${manrope.className} antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

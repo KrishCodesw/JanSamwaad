@@ -6,7 +6,7 @@ import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { hasEnvVars } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+
 import { Home, MapPin, FileText, User } from "lucide-react";
 // import { User as AuthUser } from "@supabase/supabase-js";
 
