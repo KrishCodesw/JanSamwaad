@@ -17,6 +17,8 @@ import {
   Calendar,
   Building2,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
   X,
 } from "lucide-react";
 
@@ -60,6 +62,8 @@ export default function AnnouncementsSection() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [dismissed, setDismissed] = useState<Set<number>>(new Set());
+  const [showAll, setShowAll] = useState(false);
+  const INITIAL_COUNT = 3;
 
   useEffect(() => {
     fetchAnnouncements();
@@ -98,6 +102,9 @@ export default function AnnouncementsSection() {
   const visibleAnnouncements = announcements.filter(
     (a) => !dismissed.has(a.id)
   );
+  const displayedAnnouncements = showAll
+    ? visibleAnnouncements
+    : visibleAnnouncements.slice(0, INITIAL_COUNT);
 
   if (loading) {
     return (
@@ -129,10 +136,18 @@ export default function AnnouncementsSection() {
         >
           {visibleAnnouncements.length} active
         </Badge>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowAll(!showAll)}
+          className="text-xs text-muted-foreground"
+        >
+          {showAll ? "Show Less" : "View All"}
+        </Button>
       </div>
 
       <div className="space-y-3">
-        {visibleAnnouncements.map((announcement) => {
+        {displayedAnnouncements.map((announcement) => {
           const IconComponent =
             TYPE_ICONS[announcement.type as keyof typeof TYPE_ICONS] || Bell;
           const isExpanded = expanded.has(announcement.id);
@@ -264,6 +279,24 @@ export default function AnnouncementsSection() {
           );
         })}
       </div>
+      {visibleAnnouncements.length > INITIAL_COUNT && (
+        <Button
+          variant="ghost"
+          className="w-full text-sm text-muted-foreground hover:text-primary border border-dashed border-gray-200 dark:border-gray-800"
+          onClick={() => setShowAll(!showAll)}
+        >
+          {showAll ? (
+            <span className="flex items-center gap-2">
+              Show Less <ChevronUp className="h-4 w-4" />
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              Show {visibleAnnouncements.length - INITIAL_COUNT} More{" "}
+              <ChevronDown className="h-4 w-4" />
+            </span>
+          )}
+        </Button>
+      )}
     </div>
   );
 }
