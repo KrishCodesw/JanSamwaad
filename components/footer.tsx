@@ -1,6 +1,6 @@
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import Link from "next/link";
-import { Github, Heart } from "lucide-react";
+// import { Github, Heart } from "lucide-react";
 
 export function Footer() {
   return (
@@ -9,7 +9,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-3">
-            <h3 className="font-bold text-lg text-primary">Civic Reporter</h3>
+            <h3 className="font-bold text-lg text-primary">JanSamvaad</h3>
             <p className="text-sm text-muted-foreground">
               Empowering communities to report and track civic issues for a
               better tomorrow.

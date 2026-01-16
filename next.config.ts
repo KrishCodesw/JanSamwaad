@@ -1,32 +1,22 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-
-
-
-
-
-  
-   eslint: {
+  eslint: {
     ignoreDuringBuilds: true,
   },
   images: {
     remotePatterns: [
-      // Cloudinary
       { protocol: "https", hostname: "res.cloudinary.com" },
-      // Cloudflare Images delivery domain pattern (customize as needed)
       { protocol: "https", hostname: "imagedelivery.net" },
-      // Add your image hosting domains here
       { protocol: "https", hostname: "*.supabase.co" },
     ],
   },
 
-  
   // Optimize for production
   compress: true,
   poweredByHeader: false,
-  // Enable static optimization
   trailingSlash: false,
+
   // Security headers
   async headers() {
     return [
@@ -38,14 +28,21 @@ const nextConfig: NextConfig = {
             value: "DENY",
           },
           {
-            key: 'Content-Security-Policy',
+            key: "Content-Security-Policy",
+            // 👇 UPDATED CSP POLICY
             value:
               "default-src 'self'; " +
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'; " +
+              // Added 'blob:' to script-src (fallback)
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:; " +
               "style-src 'self' 'unsafe-inline'; " +
-              "img-src 'self' data: https://*.tile.openstreetmap.org https://cdnjs.cloudflare.com; " +
+              // Added 'blob:' and CartoCDN to img-src
+              "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://cdnjs.cloudflare.com https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com; " +
               "font-src 'self' data:; " +
-              "connect-src 'self' https://*.supabase.co;",
+              // Added explicit worker-src for map workers
+              "worker-src 'self' blob:; " +
+              "style-src 'self' 'unsafe-inline' https://unpkg.com; " +
+              // Added CartoCDN to connect-src (CRITICAL for map tiles)
+              "connect-src 'self' https://*.supabase.co https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com;",
           },
           {
             key: "X-Content-Type-Options",
