@@ -25,5 +25,3 @@ export default function MapSkeleton({ className }: MapSkeletonProps) {
     </Card>
   );
 }
-
-

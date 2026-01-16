@@ -1,16 +1,16 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import { Navigation } from '@/components/navigation'
-import MyIssuesClient from '@/components/my-issues-client'
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { Navigation } from "@/components/navigation";
+import MyIssuesClient from "@/components/my-issues-client";
 
 export default async function MyIssuesPage() {
-  const supabase = await createClient()
-  
-  const { data } = await supabase.auth.getClaims()
-  const user = data?.claims
-  
+  const supabase = await createClient();
+
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
+
   if (!user) {
-    redirect('/auth/login')
+    redirect("/auth/login");
   }
 
   return (
@@ -26,5 +26,5 @@ export default async function MyIssuesPage() {
         <MyIssuesClient />
       </div>
     </main>
-  )
+  );
 }
