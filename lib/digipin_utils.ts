@@ -1,8 +1,33 @@
 import { encode, decode, Location } from "@pranamphd/digipin";
-const location: Location = { latitude: 28.6139, longitude: 77.209 }; // Example coordinates for Kartavya Path, New Delhi
+import { createClient } from '@/lib/supabase/server';
 
-const digipin = encode(location); // Encode coordinates to DIGIPIN
-console.log(digipin); // Example output: "39J438TJC7"
+export async function getIssueWithPin(issueId: number) {
+  const supabase = await createClient();
 
-const decodedLocation = decode(digipin); // Decode DIGIPIN back to coordinates
-console.log(decodedLocation); // Example output: { latitude: 28.6139, longitude: 77.209 }
+  // 1. Fetch the issue from the 'issues' table
+  const { data: issue, error } = await supabase
+    .from('issues')
+    .select('id, latitude, longitude, status')
+    .eq('id', issueId)
+    .single();
+
+  if (error || !issue) {
+    console.error("Error fetching issue:", error);
+    return null;
+  }
+
+  // 2. Generate the DigiPIN using the coordinates from your screenshot
+  // Note: Ensure the library handles float8 precision correctly
+  const location: Location = { 
+    latitude: issue.latitude, 
+    longitude: issue.longitude 
+  };
+  
+  const digipin = encode(location);
+
+  // 3. Return the combined object for your UI
+  return {
+    ...issue,
+    digipin: digipin // e.g., "MH-MUM-1234"
+  };
+}

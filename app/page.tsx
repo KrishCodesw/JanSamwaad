@@ -1,6 +1,7 @@
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import dynamic from "next/dynamic";
+import DigiPinTester from "@/components/check-digipin";
 import MapSkeleton from "@/components/map-skeleton";
 const IssuesMap = dynamic(() => import("@/components/issues-map"), {
   loading: () => <MapSkeleton className="w-full" />,
@@ -113,6 +114,7 @@ export default async function Home() {
         </div>
         <WhatIsJanSamvaad className="mt-8" />
         <Footer />
+        <DigiPinTester />
       </main>
     </>
   );
