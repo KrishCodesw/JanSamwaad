@@ -183,6 +183,8 @@ export default function AdminDashboard() {
     name: "",
     description: "",
   });
+  const [deptIssues, setDeptIssues] = useState<Issue[]>([]);
+  const [deptIssuesLoading, setDeptIssuesLoading] = useState(false);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState("all");
@@ -224,6 +226,18 @@ export default function AdminDashboard() {
       console.error("Error fetching stats:", error);
     } finally {
       setStatsLoading(false);
+    }
+  };
+  const fetchDeptIssues = async (deptId: number) => {
+    setDeptIssuesLoading(true);
+    try {
+      const res = await fetch(`/api/admin/issues?department=${deptId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setDeptIssues(data);
+      }
+    } finally {
+      setDeptIssuesLoading(false);
     }
   };
 
@@ -1277,6 +1291,78 @@ export default function AdminDashboard() {
 
           {/* Departments List */}
           <div className="space-y-4 w-full">
+            {activeTab === "departments" && selectedDepartment && (
+              <div className="mb-8 p-6 bg-white/5 rounded-xl border border-white/10 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-blue-400">
+                      {selectedDepartment.name} Queue
+                    </h2>
+                    <p className="text-muted-foreground text-sm">
+                      Reviewing assignments and officials
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedDepartment(null)}
+                  >
+                    Close Details
+                  </Button>
+                </div>
+
+                <div className="grid gap-3">
+                  {deptIssuesLoading ? (
+                    <div className="text-center py-4 text-sm animate-pulse">
+                      Fetching department records...
+                    </div>
+                  ) : deptIssues.length === 0 ? (
+                    <div className="text-center py-4 text-sm text-muted-foreground italic">
+                      No issues currently routed to this department.
+                    </div>
+                  ) : (
+                    deptIssues.map((issue) => (
+                      <Card
+                        key={issue.id}
+                        className="bg-black/40 border-white/5"
+                      >
+                        <CardContent className="py-4 flex flex-col md:flex-row justify-between md:items-center gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold">
+                                Issue #{issue.id}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] uppercase"
+                              >
+                                {issue.status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground line-clamp-1">
+                              {issue.description}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="flex items-center gap-2 text-xs font-semibold text-blue-300">
+                              <UserCheck className="h-3 w-3" />
+                              {/* Shows the official assigned from the profiles table */}
+                              {issue.assignment?.assignee?.display_name ||
+                                "Official Unassigned"}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">
+                              Notes:{" "}
+                              {issue.assignment?.notes || "No internal remarks"}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
             {departmentsLoading ? (
               <Card>
                 <CardContent className="py-12 text-center">
@@ -1332,7 +1418,10 @@ export default function AdminDashboard() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setSelectedDepartment(department)}
+                        onClick={() => {
+                          setSelectedDepartment(department);
+                          fetchDeptIssues(department.id);
+                        }}
                       >
                         <Eye className="h-4 w-4 mr-2" />
                         View Details
