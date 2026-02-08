@@ -36,3 +36,40 @@ CREATE TRIGGER tr_auto_route_issue
 BEFORE INSERT ON public.issues
 FOR EACH ROW
 EXECUTE FUNCTION public.fn_auto_route_issue();
+
+
+-- 1. Create a clean, consolidated function
+CREATE OR REPLACE FUNCTION public.fn_auto_route_issue()
+RETURNS TRIGGER AS $$
+DECLARE
+  matched_dept_id bigint;
+BEGIN
+  -- Search for the first matching department based on tags
+  SELECT dc.department_id INTO matched_dept_id
+  FROM public.department_categories dc
+  WHERE dc.category = ANY(NEW.tags)
+  LIMIT 1;
+
+  -- If a match is found, set the department
+  IF matched_dept_id IS NOT NULL THEN
+    NEW.department_id := matched_dept_id;
+  END IF;
+
+  -- Hierarchy Logic: If it is a 'pothole', also flag it as priority automatically
+  IF 'pothole' = ANY(NEW.tags) THEN
+    NEW.flagged := true;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 2. Drop existing triggers to avoid conflicts
+DROP TRIGGER IF EXISTS tr_route_issue ON public.issues;
+DROP TRIGGER IF EXISTS tr_auto_assign_issue ON public.issues;
+
+-- 3. Create the single 'Backbone' trigger
+CREATE TRIGGER tr_issue_backbone
+BEFORE INSERT ON public.issues
+FOR EACH ROW
+EXECUTE FUNCTION public.fn_auto_route_issue();

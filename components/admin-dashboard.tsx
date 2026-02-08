@@ -769,7 +769,7 @@ export default function AdminDashboard() {
               issues.map((issue) => (
                 <Card
                   key={issue.id}
-                  className={issue.flagged ? "border-red-200" : ""}
+                  className={issue.flagged ? "border-white/80" : ""}
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between">
