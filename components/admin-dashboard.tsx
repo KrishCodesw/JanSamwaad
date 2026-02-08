@@ -259,7 +259,7 @@ export default function AdminDashboard() {
   const updateIssueStatus = async (
     issueId: number,
     newStatus: string,
-    notes?: string
+    notes?: string,
   ) => {
     setStatusUpdateLoading(true);
     try {
@@ -802,10 +802,10 @@ export default function AdminDashboard() {
                                 issue.status === "active"
                                   ? "bg-red-100 text-red-800"
                                   : issue.status === "under_progress"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : issue.status === "under_review"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-green-100 text-green-800"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : issue.status === "under_review"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : "bg-green-100 text-green-800"
                               }
                             >
                               {issue.status.replace("_", " ")}
@@ -831,14 +831,54 @@ export default function AdminDashboard() {
                   <CardContent>
                     <p className="text-sm mb-3">{issue.description}</p>
 
-                    {issue.assignment && (
-                      <div className="text-xs text-muted-foreground mb-3">
-                        <strong>Assigned to:</strong>{" "}
-                        {issue.assignment.department.name}
-                        {issue.assignment.assignee &&
-                          ` (${issue.assignment.assignee.display_name})`}
+                    {issue.assignment ? (
+                      <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-dashed">
+                        <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                          <Building className="h-4 w-4" />
+                          <span>{issue.assignment.department.name}</span>
+                          {issue.assignment.assignee && (
+                            <>
+                              <Separator
+                                orientation="vertical"
+                                className="h-4"
+                              />
+                              <UserCheck className="h-4 w-4" />
+                              <span>
+                                {issue.assignment.assignee.display_name}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        {issue.assignment.notes && (
+                          <p className="mt-2 text-xs text-muted-foreground italic">
+                            " {issue.assignment.notes} "
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="mt-4 text-xs text-orange-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Unassigned - Needs routing
                       </div>
                     )}
+
+                    <div className="flex gap-4 mt-2 mb-4">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <TrendingUp className="h-3 w-3" />
+                        {issue.vote_count?.[0]?.count || 0} Votes
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <MessageSquare className="h-3 w-3" />
+                        {issue.tags.length} Tags
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {new Date(issue.created_at).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </div>
 
                     <div className="flex flex-wrap gap-2 w-full">
                       <Select
@@ -1015,8 +1055,8 @@ export default function AdminDashboard() {
                             announcement.priority === "urgent"
                               ? "destructive"
                               : announcement.priority === "high"
-                              ? "default"
-                              : "secondary"
+                                ? "default"
+                                : "secondary"
                           }
                         >
                           {announcement.priority}
@@ -1099,8 +1139,8 @@ export default function AdminDashboard() {
                               user.role === "admin"
                                 ? "destructive"
                                 : user.role === "official"
-                                ? "default"
-                                : "secondary"
+                                  ? "default"
+                                  : "secondary"
                             }
                           >
                             {user.role}

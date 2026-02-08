@@ -74,28 +74,38 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     // Update or create assignment if provided
-    if (department_id) {
-      const { error: assignError } = await supabase
-        .from('assignments')
-        .upsert({
-          issue_id: issueId,
-          department_id,
-          assignee_id: assignee_id || null,
-          assigned_by: user.id,
-          notes
-        })
-
-      if (assignError) {
-        console.error('Assignment error:', assignError)
-      }
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      message: `Issue status updated to ${status}`,
-      previous_status: currentIssue.status,
-      new_status: status
+   if (department_id) {
+  const { error: assignError } = await supabase
+    .from('assignments')
+    .upsert({
+      issue_id: issueId,
+      department_id,
+      assignee_id: assignee_id || null,
+      assigned_by: user.id,
+      notes
     })
+
+  if (assignError) console.error('Assignment error:', assignError)
+}
+
+const { data: updatedIssue } = await supabase
+  .from('issues')
+  .select(`
+    *,
+    assignment:assignments(
+      department:departments(name),
+      assignee:profiles(display_name),
+      notes
+    )
+  `)
+  .eq('id', issueId)
+  .single()
+  
+
+return NextResponse.json({ 
+  success: true, 
+  issue: updatedIssue 
+})
     
   } catch (error) {
     console.error('Status update error:', error)
