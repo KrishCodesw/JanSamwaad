@@ -25,24 +25,32 @@ export async function GET(request: Request) {
     if (profileError || !profile || !['admin', 'official'].includes(profile.role)) {
       return NextResponse.json({ error: 'Access denied - Admin/Official access required' }, { status: 403 })
     }
+// /api/admin/issues/route.ts
 
-   let query = supabase
+// Change this line to simplify the relationship paths
+// /api/admin/issues/route.ts
+
+// /api/admin/issues/route.ts
+
+// /api/admin/issues/route.ts
+
+let query = supabase
   .from('issues')
   .select(`
     *,
     images:issue_images(url),
     vote_count:votes(count),
     reporter:profiles!issues_reporter_id_fkey(display_name),
+    department:departments(name),
     assignment:assignments(
       assigned_at,
       notes,
-      department:departments(name),
       assignee:profiles!assignments_assignee_id_fkey(display_name)
     )
   `)
   .order('flagged', { ascending: false })
   .order('created_at', { ascending: false })
-  .limit(limit)
+  .limit(limit);
 
 
 

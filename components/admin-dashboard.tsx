@@ -87,6 +87,7 @@ type Issue = {
   reporter_email: string;
   vote_count?: { count: number }[] | null;
   images: { url: string }[];
+  department?: { name: string };
   assignment?: {
     department: { name: string };
     assignee: { display_name: string };
@@ -831,16 +832,23 @@ export default function AdminDashboard() {
                   <CardContent>
                     <p className="text-sm mb-3">{issue.description}</p>
 
-                    {issue.assignment ? (
-                      <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-dashed">
-                        <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                    {/* Replace the existing assignment check with this logic */}
+                    {issue.department || issue.assignment ? (
+                      <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
+                        <div className="flex items-center gap-2 text-sm font-medium text-blue-400">
                           <Building className="h-4 w-4" />
-                          <span>{issue.assignment.department.name}</span>
-                          {issue.assignment.assignee && (
+                          {/* Find where you render the department name and use this: */}
+                          <span>
+                            {issue.department?.name ||
+                              issue.assignment?.department?.name ||
+                              "Unassigned"}
+                          </span>
+
+                          {issue.assignment?.assignee && (
                             <>
                               <Separator
                                 orientation="vertical"
-                                className="h-4"
+                                className="h-4 bg-white/20"
                               />
                               <UserCheck className="h-4 w-4" />
                               <span>
@@ -849,19 +857,18 @@ export default function AdminDashboard() {
                             </>
                           )}
                         </div>
-                        {issue.assignment.notes && (
+                        {issue.assignment?.notes && (
                           <p className="mt-2 text-xs text-muted-foreground italic">
                             " {issue.assignment.notes} "
                           </p>
                         )}
                       </div>
                     ) : (
-                      <div className="mt-4 text-xs text-orange-500 flex items-center gap-1">
+                      <div className="mt-4 text-xs text-orange-500 flex items-center gap-1 font-medium">
                         <AlertCircle className="h-3 w-3" />
                         Unassigned - Needs routing
                       </div>
                     )}
-
                     <div className="flex gap-4 mt-2 mb-4">
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <TrendingUp className="h-3 w-3" />
