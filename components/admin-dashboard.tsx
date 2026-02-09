@@ -85,6 +85,9 @@ type Issue = {
   tags: string[];
   flagged: boolean;
   created_at: string;
+  latitude: number;
+  longitude: number;
+  digipin?: string;
   reporter_email: string;
   vote_count?: { count: number }[] | null;
   images: { url: string }[];
@@ -448,7 +451,7 @@ export default function AdminDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-4 w-full min-w-0">
         <div className="min-w-0">
           <h1 className="text-3xl font-bold whitespace-nowrap">
-            Government Admin Dashboard
+            Admin Dashboard
           </h1>
           <p className="text-muted-foreground whitespace-nowrap">
             Manage civic issues and government announcements
@@ -881,6 +884,8 @@ export default function AdminDashboard() {
                               <DispatcherModal
                                 issueId={issue.id}
                                 departmentId={issue.department.id}
+                                lat={issue.latitude}
+                                lng={issue.longitude}
                                 departmentName={issue.department.name}
                                 onAssign={fetchIssues}
                               />
