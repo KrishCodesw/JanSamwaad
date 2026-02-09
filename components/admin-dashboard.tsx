@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import DispatcherModal from "@/components/dispatcherModal";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -87,7 +88,7 @@ type Issue = {
   reporter_email: string;
   vote_count?: { count: number }[] | null;
   images: { url: string }[];
-  department?: { name: string };
+  department?: { id: number; name: string };
   assignment?: {
     department: { name: string };
     assignee: { display_name: string };
@@ -847,30 +848,45 @@ export default function AdminDashboard() {
                     <p className="text-sm mb-3">{issue.description}</p>
 
                     {/* Replace the existing assignment check with this logic */}
+                    {/* UPDATED SECTION START */}
                     {issue.department || issue.assignment ? (
                       <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
-                        <div className="flex items-center gap-2 text-sm font-medium text-blue-400">
-                          <Building className="h-4 w-4" />
-                          {/* Find where you render the department name and use this: */}
-                          <span>
-                            {issue.department?.name ||
-                              issue.assignment?.department?.name ||
-                              "Unassigned"}
-                          </span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-sm font-medium text-blue-400">
+                            <Building className="h-4 w-4" />
+                            <span>
+                              {issue.department?.name ||
+                                issue.assignment?.department?.name ||
+                                "Unassigned"}
+                            </span>
 
-                          {issue.assignment?.assignee && (
-                            <>
-                              <Separator
-                                orientation="vertical"
-                                className="h-4 bg-white/20"
+                            {issue.assignment?.assignee && (
+                              <>
+                                <Separator
+                                  orientation="vertical"
+                                  className="h-4 bg-white/20"
+                                />
+                                <UserCheck className="h-4 w-4" />
+                                <span>
+                                  {issue.assignment.assignee.display_name}
+                                </span>
+                              </>
+                            )}
+                          </div>
+
+                          {/* DISPATCHER MODAL INSERTION POINT */}
+                          {/* If we have a department (and ID), but NO assignee yet, show the button */}
+                          {issue.department?.id &&
+                            !issue.assignment?.assignee && (
+                              <DispatcherModal
+                                issueId={issue.id}
+                                departmentId={issue.department.id}
+                                departmentName={issue.department.name}
+                                onAssign={fetchIssues}
                               />
-                              <UserCheck className="h-4 w-4" />
-                              <span>
-                                {issue.assignment.assignee.display_name}
-                              </span>
-                            </>
-                          )}
+                            )}
                         </div>
+
                         {issue.assignment?.notes && (
                           <p className="mt-2 text-xs text-muted-foreground italic">
                             " {issue.assignment.notes} "
@@ -878,11 +894,15 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     ) : (
-                      <div className="mt-4 text-xs text-orange-500 flex items-center gap-1 font-medium">
-                        <AlertCircle className="h-3 w-3" />
-                        Unassigned - Needs routing
+                      <div className="mt-4 flex items-center justify-between p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                        <div className="text-xs text-orange-500 flex items-center gap-1 font-medium">
+                          <AlertCircle className="h-3 w-3" />
+                          Unassigned - Needs routing
+                        </div>
+                        {/* Optional: You can put a 'Route' button here later to set the department */}
                       </div>
                     )}
+                    {/* UPDATED SECTION END */}
                     <div className="flex gap-4 mt-2 mb-4">
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <TrendingUp className="h-3 w-3" />
