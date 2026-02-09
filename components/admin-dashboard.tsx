@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+
 import { Textarea } from "@/components/ui/textarea";
 import DispatcherModal from "@/components/dispatcherModal";
 import { Label } from "@/components/ui/label";
@@ -216,6 +217,9 @@ export default function AdminDashboard() {
     }
     if (activeTab === "departments") {
       fetchDepartments();
+    }
+    if (activeTab === "announcements") {
+      fetchAnnouncements();
     }
   }, [statusFilter, categoryFilter, activeTab, userRoleFilter]);
 
