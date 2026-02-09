@@ -24,33 +24,92 @@ interface DispatcherModalProps {
   issueId: number;
   departmentId: number;
   departmentName: string;
-  onAssign: () => void; // Callback to refresh parent list
+  // Add coordinates props
+  lat: number;
+  lng: number;
+  onAssign: () => void;
 }
 
+// export default function DispatcherModal({
+//   issueId,
+//   departmentId,
+//   departmentName,
+//   onAssign,
+// }: DispatcherModalProps) {
+//   const [open, setOpen] = useState(false);
+//   const [officials, setOfficials] = useState<Official[]>([]);
+//   const [loading, setLoading] = useState(false);
+//   const [assigning, setAssigning] = useState<string | null>(null);
+
+//   useEffect(() => {
+//     if (open) {
+//       fetchOfficials();
+//     }
+//   }, [open]);
+
+//   const fetchOfficials = async () => {
+//     setLoading(true);
+//     try {
+//       const res = await fetch(
+//         `/api/admin/officials?departmentId=${departmentId}`,
+//       );
+//       if (res.ok) setOfficials(await res.json());
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
 export default function DispatcherModal({
   issueId,
   departmentId,
   departmentName,
+  lat,
+  lng,
   onAssign,
 }: DispatcherModalProps) {
   const [open, setOpen] = useState(false);
-  const [officials, setOfficials] = useState<Official[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [officials, setOfficials] = useState<any[]>([]);
+  const [detectedRegion, setDetectedRegion] = useState<string>("Detecting...");
   const [assigning, setAssigning] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
-      fetchOfficials();
+      detectRegionAndFetch();
     }
   }, [open]);
 
-  const fetchOfficials = async () => {
+  const detectRegionAndFetch = async () => {
     setLoading(true);
+    let regionName = "All";
+
     try {
-      const res = await fetch(
-        `/api/admin/officials?departmentId=${departmentId}`,
+      // 1. REVERSE GEOCODING (Using OpenStreetMap free API)
+      // Note: In production, cache this or store it in the DB to avoid rate limits
+      const geoRes = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
       );
-      if (res.ok) setOfficials(await res.json());
+      const geoData = await geoRes.json();
+
+      // Extract specific location: Suburb > Village > Town
+      regionName =
+        geoData.address.suburb ||
+        geoData.address.village ||
+        geoData.address.town ||
+        "Unknown";
+      setDetectedRegion(regionName);
+    } catch (e) {
+      console.error("Geocoding failed", e);
+      setDetectedRegion("Unknown Location");
+    }
+
+    // 2. FETCH OFFICIALS FOR THIS REGION
+    try {
+      // Pass the detected region to our backend
+      const res = await fetch(
+        `/api/admin/officials?departmentId=${departmentId}&region=${regionName}`,
+      );
+      const data = await res.json();
+      setOfficials(data);
     } finally {
       setLoading(false);
     }
@@ -88,21 +147,36 @@ export default function DispatcherModal({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Assign Issue #{issueId}</DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            Select an official from <strong>{departmentName}</strong>
-          </p>
+          <div className="flex gap-2 text-sm text-muted-foreground mt-1">
+            <span>Dept: {departmentName}</span>
+            <span>•</span>
+            {/* Show the detected region so the admin knows why these people are shown */}
+            <span className="text-blue-400"> {detectedRegion}</span>
+          </div>
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh] pr-4">
           <div className="space-y-2 mt-2">
             {loading ? (
-              <div className="flex justify-center p-4">
-                <Loader2 className="animate-spin" />
-              </div>
+              <Loader2 className="animate-spin mx-auto" />
             ) : officials.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">
-                No officials found in this department.
-              </p>
+              <div className="text-center py-6 space-y-3">
+                <p className="text-muted-foreground">
+                  No officials found in <strong>{detectedRegion}</strong>.
+                </p>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    // Re-fetch without the region parameter
+                    fetch(`/api/admin/officials?departmentId=${departmentId}`)
+                      .then((r) => r.json())
+                      .then(setOfficials);
+                    setDetectedRegion("All Regions");
+                  }}
+                >
+                  Show All Department Officials
+                </Button>
+              </div>
             ) : (
               officials.map((official) => (
                 <div
@@ -124,14 +198,15 @@ export default function DispatcherModal({
                     <div className="text-right">
                       <div
                         className={`text-xs font-medium ${
-                          official.workload > 5
-                            ? "text-red-500"
-                            : official.workload > 2
-                              ? "text-yellow-500"
-                              : "text-green-500"
+                          official.workload > 10
+                            ? "text-red-500 font-bold"
+                            : "text-green-500"
                         }`}
                       >
-                        {official.workload} Active
+                        {official.workload} Active Issues
+                        {official.workload > 10 && (
+                          <span className="ml-1">⚠️ Overloaded</span>
+                        )}
                       </div>
                       <p className="text-[10px] text-muted-foreground">
                         Workload
