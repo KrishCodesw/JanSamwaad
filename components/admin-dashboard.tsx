@@ -87,7 +87,7 @@ type Issue = {
   created_at: string;
   latitude: number;
   longitude: number;
-  digipin?: string;
+  // digipin?: string;
   reporter_email: string;
   vote_count?: { count: number }[] | null;
   images: { url: string }[];
@@ -886,6 +886,7 @@ export default function AdminDashboard() {
                                 departmentId={issue.department.id}
                                 lat={issue.latitude}
                                 lng={issue.longitude}
+                                // digipin={issue.digipin}
                                 departmentName={issue.department.name}
                                 onAssign={fetchIssues}
                               />
