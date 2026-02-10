@@ -209,17 +209,21 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
-    fetchStats();
-    fetchIssues();
-    fetchAnnouncements();
+    if (activeTab === "overview") {
+      fetchStats();
+    }
+
+    if (activeTab === "issues") {
+      fetchIssues();
+    }
+    if (activeTab === "announcements") {
+      fetchAnnouncements();
+    }
     if (activeTab === "users") {
       fetchUsers();
     }
     if (activeTab === "departments") {
       fetchDepartments();
-    }
-    if (activeTab === "announcements") {
-      fetchAnnouncements();
     }
   }, [statusFilter, categoryFilter, activeTab, userRoleFilter]);
 
