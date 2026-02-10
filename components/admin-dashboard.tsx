@@ -103,12 +103,16 @@ type Issue = {
 type User = {
   id: string;
   display_name: string;
+  email: string;
   role: string;
-  department_id: number | null;
-  created_at: string;
-  issues_count: number;
+  department: string; // Now a name string, not an ID
+  region: string;
+  joined_at: string;
+  reports_count: number;
+  workload_count: number; // New: For tracking official's tasks
   votes_count: number;
-  announcements_count: number;
+  status_label: string; // New: e.g., "Overloaded", "Idle"
+  status_color: string; // New: e.g., "red", "green"
 };
 
 type Department = {
@@ -178,6 +182,8 @@ export default function AdminDashboard() {
 
   // User management
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  // Add this near your other state variables
+  const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("all");
 
   // Department management
@@ -337,6 +343,7 @@ export default function AdminDashboard() {
     try {
       const params = new URLSearchParams();
       if (userRoleFilter !== "all") params.set("role", userRoleFilter);
+      if (userSearch) params.set("search", userSearch); // Add this line
 
       const res = await fetch(`/api/admin/users?${params}`);
       if (res.ok) {
@@ -349,6 +356,15 @@ export default function AdminDashboard() {
       setUsersLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (activeTab === "users") {
+      const timer = setTimeout(() => {
+        fetchUsers();
+      }, 500); // 500ms delay to stop flickering while typing
+      return () => clearTimeout(timer);
+    }
+  }, [userSearch, userRoleFilter, activeTab]);
 
   const fetchDepartments = async () => {
     setDepartmentsLoading(true);
@@ -1131,34 +1147,49 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-
       {/* Users Management Tab */}
       {activeTab === "users" && (
         <div className="space-y-6 w-full">
-          {/* User Filters */}
+          {/* User Filters & Search */}
           <Card>
             <CardHeader>
               <CardTitle>User Management</CardTitle>
-              <CardDescription>Manage user accounts and roles</CardDescription>
+              <CardDescription>
+                Monitor workload and manage user roles
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-4 items-center">
-                <div>
-                  <Label>Role Filter</Label>
-                  <Select
-                    value={userRoleFilter}
-                    onValueChange={setUserRoleFilter}
-                  >
-                    <SelectTrigger className="w-48">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Roles</SelectItem>
-                      <SelectItem value="citizen">Citizens</SelectItem>
-                      <SelectItem value="official">Officials</SelectItem>
-                      <SelectItem value="admin">Admins</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="flex gap-4 items-center w-full md:w-auto">
+                  <div className="w-full md:w-64">
+                    <Label className="mb-2 block">Search Users</Label>
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Name..."
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                        className="pl-8"
+                      />
+                    </div>
+                  </div>
+                  <div className="w-48">
+                    <Label className="mb-2 block">Role Filter</Label>
+                    <Select
+                      value={userRoleFilter}
+                      onValueChange={setUserRoleFilter}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="citizen">Citizens</SelectItem>
+                        <SelectItem value="official">Officials</SelectItem>
+                        <SelectItem value="admin">Admins</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -1181,71 +1212,124 @@ export default function AdminDashboard() {
               </Card>
             ) : (
               users.map((user) => (
-                <Card key={user.id}>
+                <Card
+                  key={user.id}
+                  className={
+                    user.status_label === "Overloaded"
+                      ? "border-red-500/50 bg-red-500/5"
+                      : ""
+                  }
+                >
                   <CardHeader>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      {/* Left Side: Identity */}
                       <div>
-                        <CardTitle className="text-base">
-                          {user.display_name || "Unknown User"}
-                        </CardTitle>
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-base">
+                            {user.display_name || "Unknown User"}
+                          </CardTitle>
+                          {/* Intelligent Status Badge */}
                           <Badge
-                            variant={
-                              user.role === "admin"
-                                ? "destructive"
-                                : user.role === "official"
-                                  ? "default"
-                                  : "secondary"
-                            }
+                            variant="outline"
+                            className={`
+                              ${user.status_color === "red" ? "text-red-500 border-red-500 bg-red-500/10" : ""}
+                              ${user.status_color === "green" ? "text-green-500 border-green-500 bg-green-500/10" : ""}
+                              ${user.status_color === "purple" ? "text-purple-500 border-purple-500 bg-purple-500/10" : ""}
+                              ${user.status_color === "gray" ? "text-gray-500 border-gray-500 bg-gray-500/10" : ""}
+                            `}
                           >
-                            {user.role}
+                            {user.status_label}
                           </Badge>
-                          <Badge variant="outline">
-                            {user.issues_count} issues
-                          </Badge>
-                          <Badge variant="outline">
-                            {user.votes_count} votes
-                          </Badge>
+                        </div>
+
+                        <div className="text-sm text-muted-foreground mt-1">
+                          {user.email || "No email"}
+                        </div>
+
+                        {/* Context Info (Dept/Region) */}
+                        <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                          {user.role === "official" && (
+                            <>
+                              <div className="flex items-center gap-1 bg-secondary/50 px-2 py-1 rounded">
+                                <Building className="h-3 w-3" />
+                                {user.department}
+                              </div>
+                              <div className="flex items-center gap-1 bg-secondary/50 px-2 py-1 rounded">
+                                <Shield className="h-3 w-3" />
+                                {user.region}
+                              </div>
+                            </>
+                          )}
+                          <div className="flex items-center gap-1 bg-secondary/50 px-2 py-1 rounded">
+                            <Clock className="h-3 w-3" />
+                            Joined{" "}
+                            {new Date(user.joined_at).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="text-right text-sm text-muted-foreground">
-                        <div>
-                          Joined{" "}
-                          {new Date(user.created_at).toLocaleDateString()}
+                      {/* Right Side: Metrics & Actions */}
+                      <div className="flex flex-col md:items-end gap-3">
+                        <div className="flex gap-4 text-sm">
+                          {user.role === "official" ? (
+                            <div className="text-right">
+                              <div className="text-xs text-muted-foreground">
+                                Workload
+                              </div>
+                              <div
+                                className={`font-bold ${user.workload_count > 10 ? "text-red-500" : ""}`}
+                              >
+                                {user.workload_count} Tasks
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-right">
+                              <div className="text-xs text-muted-foreground">
+                                Reports
+                              </div>
+                              <div className="font-bold">
+                                {user.reports_count}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="text-right">
+                            <div className="text-xs text-muted-foreground">
+                              Votes
+                            </div>
+                            <div className="font-bold">{user.votes_count}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={user.role}
+                            onValueChange={(newRole) =>
+                              updateUserRole(user.id, newRole)
+                            }
+                          >
+                            <SelectTrigger className="w-32 h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="citizen">Citizen</SelectItem>
+                              <SelectItem value="official">Official</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => setSelectedUser(user)}
+                          >
+                            View
+                          </Button>
                         </div>
                       </div>
                     </div>
                   </CardHeader>
-
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2 w-full">
-                      <Select
-                        value={user.role}
-                        onValueChange={(newRole) =>
-                          updateUserRole(user.id, newRole)
-                        }
-                      >
-                        <SelectTrigger className="w-48">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="citizen">Citizen</SelectItem>
-                          <SelectItem value="official">Official</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedUser(user)}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
-                      </Button>
-                    </div>
-                  </CardContent>
                 </Card>
               ))
             )}
