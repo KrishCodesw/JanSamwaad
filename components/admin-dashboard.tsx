@@ -475,7 +475,7 @@ export default function AdminDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-4 w-full min-w-0">
         <div className="min-w-0">
           <h1 className="text-3xl font-bold whitespace-nowrap">
-            Admin Dashboard
+            Organization Admin Dashboard
           </h1>
           <p className="text-muted-foreground whitespace-nowrap">
             Manage civic issues and government announcements
