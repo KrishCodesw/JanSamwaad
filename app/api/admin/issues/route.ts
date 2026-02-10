@@ -11,10 +11,14 @@ export async function GET(request: Request) {
   let query = supabase
     .from('issues')
     .select(`
-      *,
+ id,
+      description, 
+      status,
+      tags,
+      created_at,
       reporter:profiles!issues_reporter_id_fkey(display_name),
       department:departments(id,name),
-      images:issue_images(url),
+
       vote_count:votes(count),
       assignment:assignments(
         notes,
