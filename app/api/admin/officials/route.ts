@@ -12,10 +12,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Dept ID required" }, { status: 400 });
   }
 
-  // 1. SELECT issues(status) instead of count, so we can filter in JS
+  // 1. UPDATE QUERY: Select 'assignments' instead of 'issues'
+  // We use !assignee_id to explicitly tell Supabase to use the foreign key for assignments
   let query = supabase
     .from("profiles")
-    .select(`*, issues(status)`) 
+    .select(`
+      *,
+      assignments!assignee_id (
+        issue:issues (
+          status
+        )
+      )
+    `)
     .eq("department_id", departmentId)
     .eq("role", "official");
 
@@ -26,13 +34,21 @@ export async function GET(req: NextRequest) {
 
   const { data: officials, error } = await query;
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("Error fetching officials:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
-  // 3. Process the data in JS
-  const formatted = officials.map((off) => {
-    // Count only non-closed issues manually
-    // This ensures officials with 0 issues still appear in the list!
-    const activeWorkload = off.issues?.filter((i: any) => i.status !== 'closed').length || 0;
+  // 3. Process the data to calculate workload correctly
+  const formatted = officials.map((off: any) => {
+    // Access the assignments array (it might be empty if no assignments)
+    const myAssignments = off.assignments || [];
+
+    // Filter to count only ACTIVE issues
+    // We check if the assignment has a connected issue, and that issue is NOT closed
+    const activeWorkload = myAssignments.filter((assignment: any) => {
+      return assignment.issue && assignment.issue.status !== 'closed';
+    }).length;
 
     return {
       id: off.id,

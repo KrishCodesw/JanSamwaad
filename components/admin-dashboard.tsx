@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 
 import { Textarea } from "@/components/ui/textarea";
 import DispatcherModal from "@/components/dispatcherModal";
+import UnassignButton from "./ui/UnassignButton";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -845,10 +846,10 @@ export default function AdminDashboard() {
                                 issue.status === "active"
                                   ? "bg-red-100 text-red-800"
                                   : issue.status === "under_progress"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : issue.status === "under_review"
-                                      ? "bg-blue-100 text-blue-800"
-                                      : "bg-green-100 text-green-800"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : issue.status === "under_review"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-green-100 text-green-800"
                               }
                             >
                               {issue.status.replace("_", " ")}
@@ -897,6 +898,10 @@ export default function AdminDashboard() {
                                 <span>
                                   {issue.assignment.assignee.display_name}
                                 </span>
+                                <UnassignButton
+                                  issueId={issue.id}
+                                  onUnassign={fetchIssues} // Pass your refresh function here
+                                />
                               </>
                             )}
                           </div>
@@ -1126,8 +1131,8 @@ export default function AdminDashboard() {
                             announcement.priority === "urgent"
                               ? "destructive"
                               : announcement.priority === "high"
-                                ? "default"
-                                : "secondary"
+                              ? "default"
+                              : "secondary"
                           }
                         >
                           {announcement.priority}
@@ -1232,10 +1237,26 @@ export default function AdminDashboard() {
                           <Badge
                             variant="outline"
                             className={`
-                              ${user.status_color === "red" ? "text-red-500 border-red-500 bg-red-500/10" : ""}
-                              ${user.status_color === "green" ? "text-green-500 border-green-500 bg-green-500/10" : ""}
-                              ${user.status_color === "purple" ? "text-purple-500 border-purple-500 bg-purple-500/10" : ""}
-                              ${user.status_color === "gray" ? "text-gray-500 border-gray-500 bg-gray-500/10" : ""}
+                              ${
+                                user.status_color === "red"
+                                  ? "text-red-500 border-red-500 bg-red-500/10"
+                                  : ""
+                              }
+                              ${
+                                user.status_color === "green"
+                                  ? "text-green-500 border-green-500 bg-green-500/10"
+                                  : ""
+                              }
+                              ${
+                                user.status_color === "purple"
+                                  ? "text-purple-500 border-purple-500 bg-purple-500/10"
+                                  : ""
+                              }
+                              ${
+                                user.status_color === "gray"
+                                  ? "text-gray-500 border-gray-500 bg-gray-500/10"
+                                  : ""
+                              }
                             `}
                           >
                             {user.status_label}
@@ -1277,7 +1298,9 @@ export default function AdminDashboard() {
                                 Workload
                               </div>
                               <div
-                                className={`font-bold ${user.workload_count > 10 ? "text-red-500" : ""}`}
+                                className={`font-bold ${
+                                  user.workload_count > 10 ? "text-red-500" : ""
+                                }`}
                               >
                                 {user.workload_count} Tasks
                               </div>

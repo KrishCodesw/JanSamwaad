@@ -34,6 +34,7 @@ export async function GET(request: Request) {
         assigned_tasks:assignments!assignments_assignee_id_fkey(count),
         votes:votes(count)
       `, { count: 'exact' })
+      .neq('role', 'citizen')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
