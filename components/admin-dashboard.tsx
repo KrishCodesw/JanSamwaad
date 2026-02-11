@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 
 import { Textarea } from "@/components/ui/textarea";
 import DispatcherModal from "@/components/dispatcherModal";
+import AddOfficialModal from "./AddOfficialModal";
 import UnassignButton from "./ui/UnassignButton";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -1162,6 +1163,12 @@ export default function AdminDashboard() {
               <CardDescription>
                 Monitor workload and manage user roles
               </CardDescription>
+              <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold">User Management</h1>
+
+                {/* The new secure button */}
+                <AddOfficialModal onOfficialAdded={fetchUsers} />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
