@@ -14,6 +14,8 @@ export async function GET(request: Request) {
  id,
       description, 
       status,
+      latitude,   
+      longitude,
       tags,
       created_at,
       reporter:profiles!issues_reporter_id_fkey(display_name),

@@ -219,9 +219,9 @@ export default function AdminDashboard() {
       fetchStats();
     }
 
-    if (activeTab === "issues") {
-      fetchIssues();
-    }
+    // if (activeTab === "issues") {
+    fetchIssues();
+    // }
     if (activeTab === "announcements") {
       fetchAnnouncements();
     }
