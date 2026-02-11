@@ -1,6 +1,5 @@
-# WARP.md
 
-This file provides guidance to WARP (warp.dev) when working with code in this repository.
+
 
 Repo type: Next.js (App Router) + TypeScript + Tailwind + shadcn/ui + Supabase Auth (SSR via @supabase/ssr)
 
