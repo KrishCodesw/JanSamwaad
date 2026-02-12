@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 
 import { Textarea } from "@/components/ui/textarea";
 import DispatcherModal from "@/components/dispatcherModal";
+import EditUserModal from "./EditUserModal";
 import AddOfficialModal from "./AddOfficialModal";
 import UnassignButton from "./ui/UnassignButton";
 import { Label } from "@/components/ui/label";
@@ -187,6 +188,8 @@ export default function AdminDashboard() {
   // Add this near your other state variables
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("all");
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
 
   // Department management
   const [selectedDepartment, setSelectedDepartment] =
@@ -216,6 +219,11 @@ export default function AdminDashboard() {
     priority: "normal",
   });
 
+  const handleEditUserClick = (user: User) => {
+    setEditingUser(user);
+    setIsEditUserOpen(true);
+  };
+
   useEffect(() => {
     if (activeTab === "overview") {
       fetchStats();
@@ -229,6 +237,7 @@ export default function AdminDashboard() {
     }
     if (activeTab === "users") {
       fetchUsers();
+      fetchDepartments();
     }
     if (activeTab === "departments") {
       fetchDepartments();
@@ -1159,7 +1168,7 @@ export default function AdminDashboard() {
           {/* User Filters & Search */}
           <Card>
             <CardHeader>
-              <CardTitle>User Management</CardTitle>
+              {/* <CardTitle>User Management</CardTitle> */}
               <CardDescription>
                 Monitor workload and manage user roles
               </CardDescription>
@@ -1351,11 +1360,19 @@ export default function AdminDashboard() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 text-xs"
-                            onClick={() => setSelectedUser(user)}
+                            className="h-8 text-xs bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-blue-500/20"
+                            onClick={() => handleEditUserClick(user)}
                           >
-                            View
+                            <Edit className="h-3 w-3 mr-1" />
+                            Edit Details
                           </Button>
+                          <EditUserModal
+                            isOpen={isEditUserOpen}
+                            onClose={() => setIsEditUserOpen(false)}
+                            user={editingUser}
+                            departments={departments} // You already have this in your state
+                            onUpdate={fetchUsers} // Reuse your existing fetchUsers function
+                          />
                         </div>
                       </div>
                     </div>
