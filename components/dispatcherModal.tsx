@@ -10,9 +10,17 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { UserCheck, MapPin, Loader2, AlertCircle, Hash } from "lucide-react";
+// If you don't have the Textarea component, you can use a standard <textarea> with Tailwind classes
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  UserCheck,
+  MapPin,
+  Loader2,
+  AlertCircle,
+  StickyNote,
+} from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-// 1. IMPORT THE LIBRARY
 import { encode } from "@pranamphd/digipin";
 
 interface DispatcherModalProps {
@@ -35,18 +43,21 @@ export default function DispatcherModal({
   const [open, setOpen] = useState(false);
   const [officials, setOfficials] = useState<any[]>([]);
   const [detectedRegion, setDetectedRegion] = useState<string>("Detecting...");
-  const [digiPin, setDigiPin] = useState<string>(""); // State for the PIN
+  const [digiPin, setDigiPin] = useState<string>("");
   const [assigning, setAssigning] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // New state for custom notes
+  const [customNote, setCustomNote] = useState("");
 
   useEffect(() => {
     if (open) {
       calculateDigiPin();
       detectRegionAndFetch();
+      setCustomNote(""); // Reset notes when modal opens
     }
   }, [open]);
 
-  // 2. CALCULATE DIGIPIN LOCALLY
   const calculateDigiPin = () => {
     if (lat && lng) {
       try {
@@ -62,7 +73,6 @@ export default function DispatcherModal({
     setLoading(true);
     let regionName = "All";
 
-    // Basic coordinate validation
     if (!lat || !lng) {
       setDetectedRegion("Location Missing");
       fetchOfficials("All");
@@ -70,14 +80,11 @@ export default function DispatcherModal({
     }
 
     try {
-      // Use your local proxy API to avoid CSP errors
       const url = `/api/external/geocode?lat=${lat}&lon=${lng}`;
-
       const geoRes = await fetch(url);
       if (geoRes.ok) {
         const geoData = await geoRes.json();
         const addr = geoData.address || {};
-
         regionName =
           addr.neighbourhood ||
           addr.suburb ||
@@ -88,7 +95,6 @@ export default function DispatcherModal({
 
         setDetectedRegion(regionName);
       } else {
-        // If Geo API fails, we still have the DigiPIN!
         setDetectedRegion("Region Lookup Failed");
       }
     } catch (e) {
@@ -101,7 +107,6 @@ export default function DispatcherModal({
 
   const fetchOfficials = async (region: string) => {
     try {
-      // Only filter by region if we successfully detected one
       const regionParam =
         region !== "All" && region !== "Unknown Region"
           ? `&region=${region}`
@@ -124,7 +129,11 @@ export default function DispatcherModal({
       await fetch(`/api/admin/issues/${issueId}/assign`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assignee_id: officialId }),
+        // Updated body to include notes
+        body: JSON.stringify({
+          assignee_id: officialId,
+          notes: customNote,
+        }),
       });
       setOpen(false);
       onAssign();
@@ -155,18 +164,15 @@ export default function DispatcherModal({
               {departmentName}
             </Badge>
 
-            {/* Display Detected Region */}
             <span className="flex items-center gap-1 text-blue-400">
               <MapPin className="h-3 w-3" />
               {detectedRegion}
             </span>
 
-            {/* 3. DISPLAY DIGIPIN */}
             {digiPin && (
               <>
                 <span className="text-muted-foreground/30">|</span>
                 <span className="flex items-center gap-1 text-orange-500 font-mono font-medium tracking-wide bg-orange-500/10 px-2 py-0.5 rounded">
-                  {/* <Hash className="h-3 w-3" /> */}
                   DigiPin: {digiPin}
                 </span>
               </>
@@ -174,7 +180,27 @@ export default function DispatcherModal({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[60vh] pr-4">
+        {/* --- CUSTOM NOTES INPUT SECTION --- */}
+        <div className="grid w-full gap-2 py-2">
+          <div className="flex items-center gap-2">
+            <StickyNote className="h-4 w-4 text-muted-foreground" />
+            <Label
+              htmlFor="message"
+              className="text-xs font-semibold text-muted-foreground"
+            >
+              Assignment Note (Optional)
+            </Label>
+          </div>
+          <Textarea
+            placeholder="Add specific instructions for the official here..."
+            className="resize-none h-20 text-sm"
+            value={customNote}
+            onChange={(e) => setCustomNote(e.target.value)}
+          />
+        </div>
+        {/* ---------------------------------- */}
+
+        <ScrollArea className="max-h-[40vh] pr-4">
           <div className="space-y-2 mt-2">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-8 text-muted-foreground gap-2">
