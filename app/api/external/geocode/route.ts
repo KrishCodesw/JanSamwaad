@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Nominatim requires a User-Agent header
+
     const externalRes = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
       {
