@@ -1,3 +1,5 @@
+
+export const dynamic = 'force-dynamic';
 // Test database connection and add sample data
 const { createClient } = require('@supabase/supabase-js')
 require('dotenv').config({ path: '.env.local' })

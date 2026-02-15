@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 // Setup database schema - creates all tables, functions, and policies
 const { createClient } = require('@supabase/supabase-js')
 const fs = require('fs')

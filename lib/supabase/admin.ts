@@ -1,4 +1,7 @@
+export const dynamic = 'force-dynamic';
+
 import { createClient as createSupabaseServer } from '@supabase/supabase-js'
+
 
 // Create an admin client using the service role key. NEVER expose this on the client.
 export function createAdminClient() {

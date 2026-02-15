@@ -1,6 +1,6 @@
+export const dynamic = 'force-dynamic';
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-
 // ⚠️ We use the SERVICE ROLE key to bypass RLS and access Admin Auth APIs
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

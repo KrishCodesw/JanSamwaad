@@ -1,3 +1,5 @@
+
+export const dynamic = 'force-dynamic';
 const { createClient } = require('@supabase/supabase-js')
 require('dotenv').config({ path: '.env.local' })
 

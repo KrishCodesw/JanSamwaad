@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 // Display the schema for manual copy-paste into Supabase SQL Editor
 const fs = require('fs')
 const path = require('path')
