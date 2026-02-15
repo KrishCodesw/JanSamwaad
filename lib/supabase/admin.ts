@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+
 
 import { createClient as createSupabaseServer } from '@supabase/supabase-js'
 
