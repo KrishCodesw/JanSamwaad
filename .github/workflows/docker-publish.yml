@@ -22,7 +22,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: your-dockerhub-user/your-repo:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/jansamwaad:latest
           build-args: |
             NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY }}
