@@ -77,7 +77,16 @@ export function OfficialIssueCard({
 
   const handleResolveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!proofImage || !note.trim()) return;
+
+    // Manual validation so it doesn't fail silently
+    if (!note.trim()) {
+      alert("Please enter a resolution note.");
+      return;
+    }
+    if (!proofImage) {
+      alert("Please upload a proof of work image.");
+      return;
+    }
 
     setSubmitting(true);
 
@@ -87,17 +96,35 @@ export function OfficialIssueCard({
       formData.append("note", note);
       formData.append("proof", proofImage);
 
-      const response = await fetch("/api/issues/resolve", {
+      // IMPORTANT: Ensure your backend file is located exactly at:
+      // app/api/resolve-issue/route.ts
+      const response = await fetch("/api/resolve-issue", {
         method: "POST",
         body: formData,
       });
 
-      if (!response.ok) throw new Error("Failed to submit resolution");
+      // 1. Grab raw text FIRST to catch 404s, 500s, or empty responses safely
+      const rawText = await response.text();
+
+      // 2. Try to safely parse it as JSON
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (parseError) {
+        console.error("Failed to parse JSON. Raw server response:", rawText);
+        throw new Error(
+          `Server returned invalid response (Status: ${response.status}). Check console.`,
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to submit resolution");
+      }
 
       onResolved();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error resolving issue:", error);
-      alert("Failed to submit resolution. Please try again.");
+      alert(`Error: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -216,7 +243,6 @@ export function OfficialIssueCard({
                   placeholder="Describe the actions taken..."
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  required
                 />
               </div>
 
@@ -229,7 +255,6 @@ export function OfficialIssueCard({
                     type="file"
                     accept="image/*"
                     onChange={(e) => setProofImage(e.target.files?.[0] || null)}
-                    required
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>

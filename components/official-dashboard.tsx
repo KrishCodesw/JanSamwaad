@@ -17,8 +17,6 @@ export default function OfficialDashboard() {
       setLoading(true);
       setError(null);
 
-      // Assuming you create an API route: /api/issues/assigned
-      // This route should join `issues` and `assignments` where assignee_id = user.id
       const res = await fetch(`/api/issues/assigned`);
 
       if (!res.ok) throw new Error("Failed to fetch assigned issues");
