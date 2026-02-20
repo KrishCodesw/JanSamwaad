@@ -1,6 +1,7 @@
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import dynamic from "next/dynamic";
+import OfficialDashboard from "@/components/official-dashboard";
 // import DigiPinTester from "@/components/check-digipin";
 import MapSkeleton from "@/components/map-skeleton";
 const IssuesMap = dynamic(() => import("@/components/issues-map"), {
@@ -14,6 +15,17 @@ export default async function Home() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
+
+  let isOfficial = false;
+  if (user?.sub) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.sub)
+      .single();
+
+    isOfficial = profile?.role === "official";
+  }
 
   const defaultUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -53,6 +65,11 @@ export default async function Home() {
         <Navigation user={user} />
         <div className="flex-1 w-full flex flex-col gap-8 items-center">
           <div className="flex-1 flex flex-col gap-8 max-w-5xl p-5 w-full">
+            {isOfficial && (
+              <div className="mb-8 w-full">
+                <OfficialDashboard />
+              </div>
+            )}
             {/* Hero Section */}
             <div className="text-center space-y-4">
               <h1 className="text-3xl md:text-4xl ">
