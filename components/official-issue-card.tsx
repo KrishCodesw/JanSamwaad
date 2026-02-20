@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,9 +18,32 @@ import {
   UploadCloud,
   CheckCircle2,
   Loader2,
+  X,
 } from "lucide-react";
 
-// (Include your STATUS_COLORS and CATEGORY_COLORS here)
+// Note: Replace this import with the actual path to your digipin encoder function
+import { encode } from "@pranamphd/digipin";
+
+const STATUS_COLORS: Record<string, string> = {
+  active: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400",
+  under_progress:
+    "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-400",
+  under_review: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400",
+  closed: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-400",
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  pothole: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400",
+  streetlight:
+    "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-400",
+  sanitation:
+    "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-400",
+  water: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400",
+  traffic:
+    "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-400",
+  park: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400",
+  other: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400",
+};
 
 export function OfficialIssueCard({
   issue,
@@ -32,10 +55,25 @@ export function OfficialIssueCard({
   const [showImage, setShowImage] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [digiPin, setDigiPin] = useState<string | null>(null);
 
   // Form State
   const [note, setNote] = useState("");
   const [proofImage, setProofImage] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (issue.latitude && issue.longitude) {
+      try {
+        const pin = encode({
+          latitude: issue.latitude,
+          longitude: issue.longitude,
+        });
+        setDigiPin(pin);
+      } catch (e) {
+        console.error("DigiPIN generation failed:", e);
+      }
+    }
+  }, [issue.latitude, issue.longitude]);
 
   const handleResolveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,9 +86,7 @@ export function OfficialIssueCard({
       formData.append("issue_id", issue.id.toString());
       formData.append("note", note);
       formData.append("proof", proofImage);
-      // The exact timestamp is captured server-side when saving to `status_history`
 
-      // Ensure you create an API route to handle this submission
       const response = await fetch("/api/issues/resolve", {
         method: "POST",
         body: formData,
@@ -58,7 +94,7 @@ export function OfficialIssueCard({
 
       if (!response.ok) throw new Error("Failed to submit resolution");
 
-      onResolved(); // Refresh the list
+      onResolved();
     } catch (error) {
       console.error("Error resolving issue:", error);
       alert("Failed to submit resolution. Please try again.");
@@ -94,9 +130,26 @@ export function OfficialIssueCard({
                 {issue.flagged && <Flag className="h-4 w-4 text-red-500" />}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="outline">
+                <Badge
+                  className={
+                    STATUS_COLORS[issue.status] ||
+                    "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400"
+                  }
+                >
                   {issue.status.replace("_", " ")}
                 </Badge>
+                {issue.tags?.map((tag: string) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className={`border-gray-200 dark:border-gray-700 ${
+                      CATEGORY_COLORS[tag] ||
+                      "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400"
+                    }`}
+                  >
+                    {tag}
+                  </Badge>
+                ))}
               </div>
             </div>
             {issue.images && issue.images.length > 0 && (
@@ -116,9 +169,27 @@ export function OfficialIssueCard({
           <p className="text-sm leading-relaxed dark:text-gray-300">
             {issue.description}
           </p>
-          <div className="flex items-center text-xs text-muted-foreground pt-2 border-t dark:border-gray-700">
-            <Clock className="h-3 w-3 mr-1" />
-            Reported: {formatTimeAgo(issue.created_at)}
+          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-2 border-t dark:border-gray-700">
+            <div className="flex items-center">
+              <Clock className="h-3 w-3 mr-1" />
+              Reported: {formatTimeAgo(issue.created_at)}
+            </div>
+
+            {/* --- DigiPIN & External Map Link --- */}
+            {digiPin && (
+              <div className="flex items-center hover:text-primary transition-colors">
+                <MapPin className="h-3 w-3 mr-1" />
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${issue.latitude},${issue.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open in Google Maps"
+                  className="underline underline-offset-2 font-medium"
+                >
+                  {digiPin}
+                </a>
+              </div>
+            )}
           </div>
         </CardContent>
 
@@ -196,7 +267,42 @@ export function OfficialIssueCard({
         </CardFooter>
       </div>
 
-      {/* Include your overlay reveal section for the issue image here just like in the original IssueCard */}
+      {/* --- OVERLAY REVEAL SECTION --- */}
+      {issue.images && issue.images.length > 0 && (
+        <div
+          className={`absolute inset-0 z-20 bg-background/95 backdrop-blur-sm transition-transform duration-300 ease-in-out ${
+            showImage ? "translate-y-0" : "translate-y-full"
+          }`}
+          onClick={() => setShowImage(false)}
+        >
+          {/* Close Button */}
+          <div className="absolute top-3 right-3 z-30">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="h-8 w-8 rounded-full shadow-md bg-white/80 hover:bg-white dark:bg-black/50 dark:hover:bg-black/80"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowImage(false);
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* The Image */}
+          <div className="relative w-full h-full cursor-pointer">
+            <Image
+              src={issue.images[0].url}
+              alt="Issue evidence"
+              fill
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
