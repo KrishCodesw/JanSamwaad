@@ -78,7 +78,9 @@ export default function OfficialDashboard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Briefcase className="h-5 w-5 text-primary" />
-            <CardTitle className="text-xl text-primary">My Workspace</CardTitle>
+            <CardTitle className="text-xl text-primary">
+              Resolution Desk
+            </CardTitle>
           </div>
           <Button
             onClick={fetchIssues}
