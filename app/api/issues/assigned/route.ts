@@ -3,6 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
   try {
+    // Extract query parameters from the request URL
+    const { searchParams } = new URL(request.url);
+    const statusFilter = searchParams.get("status") || "pending"; 
+
     const supabase = await createClient();
     
     // 1. Get the currently authenticated user
@@ -12,9 +16,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 2. Fetch issues where this specific user is the assignee
-    // We use an !inner join on the assignments table to filter the issues
-    const { data: issues, error: fetchError } = await supabase
+    // 2. Build the base query
+    let query = supabase
       .from("issues")
       .select(`
         *,
@@ -30,8 +33,17 @@ export async function GET(request: Request) {
         )
       `)
       .eq("assignments.assignee_id", user.id)
-      .neq("status", "closed") // Optional: hide closed issues from the pending dashboard
       .order("created_at", { ascending: false });
+
+    // 3. Apply status filter dynamically based on the query param
+    // Assuming "closed" is the string your database uses for resolved issues
+    if (statusFilter === "resolved") {
+      query = query.eq("status", "closed"); 
+    } else {
+      query = query.neq("status", "closed"); 
+    }
+
+    const { data: issues, error: fetchError } = await query;
 
     if (fetchError) {
       console.error("Supabase error:", fetchError);
@@ -41,7 +53,7 @@ export async function GET(request: Request) {
       );
     }
 
-    // 3. Return the data to the frontend
+    // 4. Return the data to the frontend
     return NextResponse.json({ data: issues });
 
   } catch (error) {
