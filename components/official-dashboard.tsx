@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { OfficialIssueCard } from "./official-issue-card";
+import { ResolvedIssueCard } from "./resolved-issue-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -143,13 +144,10 @@ export default function OfficialDashboard() {
                     You haven't resolved any issues yet.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    {/* 2. Map using the new ResolvedIssueCard */}
                     {resolvedIssues.map((issue) => (
-                      <OfficialIssueCard
-                        key={issue.id}
-                        issue={issue}
-                        onResolved={fetchIssues} // Unlikely to need this for closed, but safe to pass
-                      />
+                      <ResolvedIssueCard key={issue.id} issue={issue} />
                     ))}
                   </div>
                 )}
