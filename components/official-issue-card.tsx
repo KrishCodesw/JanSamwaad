@@ -145,7 +145,7 @@ export function OfficialIssueCard({
   };
 
   return (
-    <Card className="relative overflow-hidden flex flex-col h-full dark:bg-gray-900 dark:border-gray-700">
+    <Card className="relative overflow-hidden flex flex-col h-full dark:bg-black dark:border-gray-700">
       <div className="flex flex-col flex-grow">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">

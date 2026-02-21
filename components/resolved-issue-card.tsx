@@ -65,12 +65,6 @@ export function ResolvedIssueCard({ issue }: { issue: any }) {
               <Clock className="h-3.5 w-3.5" />
               Reported: {reportedDate}
             </div>
-            <div className="flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5" />
-              <span className="underline decoration-muted-foreground/50 underline-offset-2">
-                {issue.location_code || "Location"}
-              </span>
-            </div>
           </div>
 
           {/* --- EXPANDABLE IMAGE SECTION --- */}
