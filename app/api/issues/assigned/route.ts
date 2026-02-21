@@ -3,13 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
   try {
-    // Extract query parameters from the request URL
     const { searchParams } = new URL(request.url);
     const statusFilter = searchParams.get("status") || "pending"; 
 
     const supabase = await createClient();
     
-    // 1. Get the currently authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -17,12 +15,14 @@ export async function GET(request: Request) {
     }
 
     // 2. Build the base query
+    // ADDED: proof_of_work(image_url, notes) to the select statement
     let query = supabase
       .from("issues")
       .select(`
         *,
         assignments!inner(*),
         images:issue_images(url),
+        proof_of_work(image_url, notes),
         status_changes:status_history(
           from_status,
           to_status,
@@ -35,8 +35,7 @@ export async function GET(request: Request) {
       .eq("assignments.assignee_id", user.id)
       .order("created_at", { ascending: false });
 
-    // 3. Apply status filter dynamically based on the query param
-    // Assuming "closed" is the string your database uses for resolved issues
+    // 3. Apply status filter
     if (statusFilter === "resolved") {
       query = query.eq("status", "closed"); 
     } else {
@@ -53,7 +52,6 @@ export async function GET(request: Request) {
       );
     }
 
-    // 4. Return the data to the frontend
     return NextResponse.json({ data: issues });
 
   } catch (error) {

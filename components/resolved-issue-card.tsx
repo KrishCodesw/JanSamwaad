@@ -6,10 +6,11 @@ import { Clock, MapPin, Eye } from "lucide-react";
 import Image from "next/image";
 
 export function ResolvedIssueCard({ issue }: { issue: any }) {
-  // Extracting image URLs safely
-  // Adjust 'proof_image_url' to match whatever your API returns for the bucket image
+  // Extracting image URLs safely based on the updated Supabase query
   const beforeImage = issue.images?.[0]?.url || "/placeholder.svg";
-  const afterImage = issue.proof_image_url || "/placeholder.svg";
+
+  // Look into the joined proof_of_work table for the after image
+  const afterImage = issue.proof_of_work?.[0]?.image_url || "/placeholder.svg";
 
   // Format the date if it exists
   const reportedDate = issue.created_at
@@ -68,7 +69,6 @@ export function ResolvedIssueCard({ issue }: { issue: any }) {
               Reported Issue
             </span>
             <div className="relative aspect-video w-full overflow-hidden rounded-md border bg-muted">
-              {/* If you don't have next/image configured for your bucket domains yet, you can use a standard <img> tag instead */}
               <img
                 src={beforeImage}
                 alt="Before issue resolution"
