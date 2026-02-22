@@ -119,7 +119,6 @@ export default function OfficialDashboard() {
             </div>
           ) : (
             <>
-              {/* PENDING TAB CONTENT */}
               <TabsContent value="pending" className="mt-0">
                 {pendingIssues.length === 0 ? (
                   <div className="text-center py-12 border-2 border-dashed border-primary/20 rounded-lg text-muted-foreground">

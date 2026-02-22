@@ -1,8 +1,6 @@
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
 import dynamic from "next/dynamic";
-import OfficialDashboard from "@/components/official-dashboard";
-// import DigiPinTester from "@/components/check-digipin";
 import MapSkeleton from "@/components/map-skeleton";
 const IssuesMap = dynamic(() => import("@/components/issues-map"), {
   loading: () => <MapSkeleton className="w-full" />,
@@ -16,6 +14,7 @@ export default async function Home() {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
+  // Check if the user is an official
   let isOfficial = false;
   if (user?.sub) {
     const { data: profile } = await supabase
@@ -65,21 +64,28 @@ export default async function Home() {
         <Navigation user={user} />
         <div className="flex-1 w-full flex flex-col gap-8 items-center">
           <div className="flex-1 flex flex-col gap-8 max-w-5xl p-5 w-full">
-            {isOfficial && (
-              <div className="mb-8 w-full">
-                <OfficialDashboard />
-              </div>
-            )}
             {/* Hero Section */}
             <div className="text-center space-y-4">
-              <h1 className="text-3xl md:text-4xl ">
+              <h1 className="text-3xl md:text-4xl">
                 Crowdsourced Civic Issue Reporting
               </h1>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                 Report issues, see what&apos;s nearby, and track progress as
                 officials resolve them.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+
+              {/* Navigation Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                {/* Conditionally rendered Official Dashboard button */}
+                {isOfficial && (
+                  <Link
+                    href="/officialdashboard"
+                    className="bg-primary text-primary-foreground px-6 py-3 rounded-md hover:bg-primary/90 transition-colors"
+                  >
+                    Go to Official Dashboard
+                  </Link>
+                )}
+
                 <Link
                   href="/report"
                   className="bg-primary text-primary-foreground px-6 py-3 rounded-md hover:bg-primary/90 transition-colors"

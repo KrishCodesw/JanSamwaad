@@ -36,8 +36,8 @@ const navigationLinks = [
 
 interface NavigationProps {
   user?: any | null;
+  isOfficial?: boolean;
 }
-
 export function Navigation({ user }: NavigationProps) {
   const pathname = usePathname();
 
