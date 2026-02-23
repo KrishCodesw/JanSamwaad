@@ -31,7 +31,9 @@ export async function GET(request: Request) {
         *,
         department:departments!profiles_department_id_fkey(id, name),
         reported_issues:issues(count),
-        assigned_tasks:assignments!assignments_assignee_id_fkey(count),
+       assigned_tasks:assignments!assignments_assignee_id_fkey(
+  issue:issues(status)
+),
         votes:votes(count)
       `, { count: 'exact' })
       .neq('role', 'citizen')
@@ -58,7 +60,9 @@ export async function GET(request: Request) {
 
     const enrichedUsers = profiles?.map((profile) => {
       const reports = profile.reported_issues?.[0]?.count || 0;
-      const workload = profile.assigned_tasks?.[0]?.count || 0;
+     const workload = profile.assigned_tasks?.filter(
+    (t: any) => t.issue?.status !== 'closed'
+  ).length || 0;
       
       let statusLabel = "Active";
       let statusColor = "green";
