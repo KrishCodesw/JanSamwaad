@@ -3,7 +3,7 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-
+import MarkerClusterGroup from "react-leaflet-cluster";
 // fix for default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -14,6 +14,21 @@ L.Icon.Default.mergeOptions({
   shadowUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
+
+const createCustomIcon = (status: string, flagged?: boolean) => {
+  let color = "#3b82f6";
+  if (status === "under_progress") color = "#f59e0b";
+  if (status === "under_review") color = "#8b5cf6";
+  if (status === "closed") color = "#10b981";
+  if (flagged) color = "#ef4444";
+
+  return L.divIcon({
+    html: `<div style="background:${color};width:20px;height:20px;border-radius:50%;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,.3);"></div>`,
+    className: "custom-div-icon",
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  });
+};
 
 type Issue = {
   id: number;
@@ -30,11 +45,9 @@ type Issue = {
 export default function LeafletMap({
   issues,
   mapCenter,
-  createCustomIcon,
 }: {
   issues: Issue[];
   mapCenter: [number, number];
-  createCustomIcon: (status: string, flagged?: boolean) => L.DivIcon | null;
 }) {
   return (
     <MapContainer
@@ -47,7 +60,7 @@ export default function LeafletMap({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-
+      {/* <MarkerClusterGroup chunkedLoading> */}
       {issues.map((issue) => (
         <Marker
           key={issue.id}
@@ -78,6 +91,7 @@ export default function LeafletMap({
           </Popup>
         </Marker>
       ))}
+      {/* </MarkerClusterGroup> */}
     </MapContainer>
   );
 }

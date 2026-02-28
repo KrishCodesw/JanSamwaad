@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState, useMemo } from "react";
+import useSWR from "swr";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,8 +16,15 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-// 👇 Dynamically import LeafletMap without SSR
-const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
+// Dynamically import LeafletMap without SSR
+const LeafletMap = dynamic(() => import("./LeafletMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-full w-full bg-muted/20">
+      <span className="text-muted-foreground">Loading interactive map...</span>
+    </div>
+  ),
+});
 
 type Issue = {
   id: number;
@@ -30,54 +38,43 @@ type Issue = {
   tags?: string[];
 };
 
+// SWR Fetcher function
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch issues");
+  const data = await res.json();
+  // Safely parse regardless of your API's return structure
+  return Array.isArray(data)
+    ? data
+    : Array.isArray(data.issues)
+      ? data.issues
+      : [];
+};
+
 export default function IssuesMap({ className }: { className?: string }) {
-  const [issues, setIssues] = useState<Issue[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number]>([
-    28.6139,
-    77.209, // fallback: Delhi
-  ]);
-  const [L, setLeaflet] = useState<any>(null); // store leaflet
+    28.6139, 77.209,
+  ]); // fallback: Delhi
+
+  // This one line replaces all your fetch logic, loading states, and error states!
+  const {
+    data: issues = [],
+    error,
+    isLoading,
+  } = useSWR<Issue[]>("/api/issues/map?limit=200", fetcher, {
+    revalidateOnFocus: false, // Prevents refetching every time the user switches browser tabs
+  });
 
   useEffect(() => {
-    // Get user location first
+    // Get user location in the background. Does NOT block the map from loading anymore.
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
-        () => setUserLocation([28.6139, 77.209]) // fallback
+        () => console.warn("Geolocation denied, using fallback."),
       );
     }
-
-    // Load issues
-    const loadIssues = async () => {
-      try {
-        const res = await fetch("/api/issues?limit=100");
-        if (!res.ok) {
-          throw new Error("Failed to fetch issues");
-        }
-        const data = await res.json();
-        const fetchedIssues = Array.isArray(data)
-          ? data
-          : Array.isArray(data.issues)
-          ? data.issues
-          : [];
-        setIssues(fetchedIssues);
-      } catch (err) {
-        console.error("Error loading issues:", err);
-        setError("Failed to load issues. Please try refreshing the page.");
-        setIssues([]); // Ensure issues array is empty on error
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadIssues();
-
-    // Load leaflet only on client
-    import("leaflet").then((leaflet) => setLeaflet(leaflet));
   }, []);
 
   const mapCenter = useMemo(() => {
@@ -89,25 +86,7 @@ export default function IssuesMap({ className }: { className?: string }) {
     return userLocation;
   }, [issues, userLocation]);
 
-  // marker style function
-  const createCustomIcon = (status: string, flagged?: boolean) => {
-    if (!L) return null; // wait until leaflet is loaded
-
-    let color = "#3b82f6";
-    if (status === "under_progress") color = "#f59e0b";
-    if (status === "under_review") color = "#8b5cf6";
-    if (status === "closed") color = "#10b981";
-    if (flagged) color = "#ef4444";
-
-    return L.divIcon({
-      html: `<div style="background:${color};width:20px;height:20px;border-radius:50%;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,.3);"></div>`,
-      className: "custom-div-icon",
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
-    });
-  };
-
-  if (loading || !L) {
+  if (isLoading) {
     return (
       <Card className={className}>
         <CardHeader>
@@ -122,7 +101,9 @@ export default function IssuesMap({ className }: { className?: string }) {
         <CardContent className="p-6">
           <div className="flex items-center justify-center h-48">
             <RefreshCw className="h-6 w-6 animate-spin text-primary" />
-            <span className="ml-2 text-muted-foreground">Loading map...</span>
+            <span className="ml-2 text-muted-foreground">
+              Loading map data...
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -142,7 +123,9 @@ export default function IssuesMap({ className }: { className?: string }) {
         </CardHeader>
         <CardContent className="p-6 text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <p className="text-red-700 mb-4">{error}</p>
+          <p className="text-red-700 mb-4">
+            {error.message || "Failed to load map data."}
+          </p>
           <Button onClick={() => window.location.reload()} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             Reload Page
@@ -154,9 +137,7 @@ export default function IssuesMap({ className }: { className?: string }) {
 
   return (
     <Card
-      className={`${className} transition-all duration-300 ${
-        isExpanded ? "fixed inset-4 z-50 shadow-2xl" : ""
-      }`}
+      className={`${className} transition-all duration-300 ${isExpanded ? "fixed inset-4 z-50 shadow-2xl" : ""}`}
     >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
@@ -199,15 +180,10 @@ export default function IssuesMap({ className }: { className?: string }) {
       {!isCollapsed && (
         <CardContent className="p-0">
           <div
-            className={`${
-              isExpanded ? "h-[calc(100vh-200px)]" : "h-48 md:h-64"
-            } transition-all duration-300`}
+            className={`${isExpanded ? "h-[calc(100vh-200px)]" : "h-48 md:h-64"} transition-all duration-300`}
           >
-            <LeafletMap
-              issues={issues}
-              mapCenter={mapCenter}
-              createCustomIcon={createCustomIcon}
-            />
+            {/* createCustomIcon is now handled internally by LeafletMap */}
+            <LeafletMap issues={issues} mapCenter={mapCenter} />
           </div>
 
           {isExpanded && (
