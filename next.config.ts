@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:; " +
               "style-src 'self' 'unsafe-inline'; " +
               // Added 'blob:' and CartoCDN to img-src
-              "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://cdnjs.cloudflare.com https://rmiyogmikonumdhrpnyf.supabase.co https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com;  " +
+              "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://server.arcgisonline.com; https://cdnjs.cloudflare.com https://rmiyogmikonumdhrpnyf.supabase.co https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com;  " +
               "font-src 'self' data:; " +
               // Added explicit worker-src for map workers
               "worker-src 'self' blob:; " +

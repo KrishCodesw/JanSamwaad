@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-// Dynamically import LeafletMap without SSR
 const LeafletMap = dynamic(() => import("./LeafletMap"), {
   ssr: false,
   loading: () => (
@@ -38,12 +37,10 @@ type Issue = {
   tags?: string[];
 };
 
-// SWR Fetcher function
 const fetcher = async (url: string) => {
   const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to fetch issues");
   const data = await res.json();
-  // Safely parse regardless of your API's return structure
   return Array.isArray(data)
     ? data
     : Array.isArray(data.issues)
@@ -54,39 +51,42 @@ const fetcher = async (url: string) => {
 export default function IssuesMap({ className }: { className?: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [userLocation, setUserLocation] = useState<[number, number]>([
-    28.6139, 77.209,
-  ]); // fallback: Delhi
 
-  // This one line replaces all your fetch logic, loading states, and error states!
+  // We start this as null so we know when it's actively fetching
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(
+    null,
+  );
+
   const {
     data: issues = [],
     error,
     isLoading,
   } = useSWR<Issue[]>("/api/issues/map?limit=200", fetcher, {
-    revalidateOnFocus: false, // Prevents refetching every time the user switches browser tabs
+    revalidateOnFocus: false,
   });
 
   useEffect(() => {
-    // Get user location in the background. Does NOT block the map from loading anymore.
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
-        () => console.warn("Geolocation denied, using fallback."),
+        (err) => {
+          console.warn("Geolocation denied or failed, using fallback.", err);
+          setUserLocation([28.6139, 77.209]); // Delhi Fallback only on error
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 },
       );
+    } else {
+      setUserLocation([28.6139, 77.209]); // Fallback if geolocation isn't supported
     }
   }, []);
 
-  const mapCenter = useMemo(() => {
-    if (issues.length > 0) {
-      const lat = issues.reduce((s, i) => s + i.latitude, 0) / issues.length;
-      const lng = issues.reduce((s, i) => s + i.longitude, 0) / issues.length;
-      return [lat, lng] as [number, number];
-    }
-    return userLocation;
-  }, [issues, userLocation]);
+  const handleIssueAction = async (issueId: number, action: "upvote") => {
+    console.log(`Triggering ${action} for issue ${issueId}`);
+    // Add upvote API logic here
+  };
 
-  if (isLoading) {
+  // Wait for BOTH the issues to load AND the user's location to be found
+  if (isLoading || !userLocation) {
     return (
       <Card className={className}>
         <CardHeader>
@@ -99,10 +99,12 @@ export default function IssuesMap({ className }: { className?: string }) {
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          <div className="flex items-center justify-center h-48">
+          <div className="flex flex-col items-center justify-center h-48 space-y-2">
             <RefreshCw className="h-6 w-6 animate-spin text-primary" />
-            <span className="ml-2 text-muted-foreground">
-              Loading map data...
+            <span className="text-muted-foreground text-sm">
+              {!userLocation
+                ? "Finding your location..."
+                : "Loading map data..."}
             </span>
           </div>
         </CardContent>
@@ -182,8 +184,12 @@ export default function IssuesMap({ className }: { className?: string }) {
           <div
             className={`${isExpanded ? "h-[calc(100vh-200px)]" : "h-48 md:h-64"} transition-all duration-300`}
           >
-            {/* createCustomIcon is now handled internally by LeafletMap */}
-            <LeafletMap issues={issues} mapCenter={mapCenter} />
+            {/* The map is guaranteed to mount with the correct userLocation now */}
+            <LeafletMap
+              issues={issues}
+              mapCenter={userLocation}
+              onIssueAction={handleIssueAction}
+            />
           </div>
 
           {isExpanded && (
