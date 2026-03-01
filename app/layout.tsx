@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     siteName: "JanSamvaad",
     images: [
       {
-        url: "/opengraph-image.png",
+        url: "https://i.postimg.cc/d1hG5p43/Jan-Samvaad.png",
         width: 1200,
         height: 630,
         alt: "JanSamvaad - Civic Issue Reporting Platform",
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     title: "JanSamvaad - Crowdsourced Civic Issue Reporting",
     description:
       "Report local civic issues, track progress, and improve your community.",
-    images: ["/twitter-image.png"],
+    images: ["https://i.postimg.cc/d1hG5p43/Jan-Samvaad.png"],
   },
   robots: {
     index: true,
@@ -74,11 +74,23 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      {
+        url: "https://i.postimg.cc/d1hG5p43/Jan-Samvaad.png",
+        sizes: "16x16",
+        type: "image/png",
+      },
+      {
+        url: "https://i.postimg.cc/d1hG5p43/Jan-Samvaad.png",
+        sizes: "32x32",
+        type: "image/png",
+      },
     ],
     apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      {
+        url: "https://i.postimg.cc/d1hG5p43/Jan-Samvaad.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
     ],
   },
 };
