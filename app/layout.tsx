@@ -9,6 +9,8 @@ const defaultUrl =
     ? `https://${process.env.VERCEL_URL}`
     : "http://localhost:3000");
 
+const ogImage = `${defaultUrl}/JanSamvaad.png`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
   title:
@@ -41,7 +43,7 @@ export const metadata: Metadata = {
     siteName: "JanSamvaad",
     images: [
       {
-        url: "https://i.postimg.cc/d1hG5p43/Jan-Samvaad.png",
+        url: "ogImage",
         width: 1200,
         height: 630,
         alt: "JanSamvaad - Civic Issue Reporting Platform",
@@ -55,7 +57,7 @@ export const metadata: Metadata = {
     title: "JanSamvaad - Crowdsourced Civic Issue Reporting",
     description:
       "Report local civic issues, track progress, and improve your community.",
-    images: ["https://i.postimg.cc/d1hG5p43/Jan-Samvaad.png"],
+    images: [ogImage],
   },
   robots: {
     index: true,
