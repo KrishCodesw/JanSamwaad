@@ -49,6 +49,21 @@ if (typeof document !== "undefined") {
   document.head.appendChild(style);
 }
 
+function MapResizeUpdater({ isExpanded }: { isExpanded: boolean }) {
+  const map = useMap();
+
+  useEffect(() => {
+    // Wait for the CSS transition (300ms) to finish before recalculating
+    const timeoutId = setTimeout(() => {
+      map.invalidateSize();
+    }, 350);
+
+    return () => clearTimeout(timeoutId);
+  }, [isExpanded, map]);
+
+  return null;
+}
+
 const mapPinSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 15 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>`;
 
 const createCustomIcon = (issue: Issue) => {
@@ -158,11 +173,11 @@ function LocateControl() {
             e.preventDefault();
             locateUser();
           }}
-          className="bg-white w-8 h-8 flex items-center justify-center hover:bg-slate-100 text-slate-700 cursor-pointer transition-colors rounded-sm"
+          className="bg-white  flex items-center justify-center hover:bg-slate-100 text-slate-700 cursor-pointer transition-colors rounded-sm"
           title="Find my location"
           aria-label="Find my location"
         >
-          <LocateFixed className="h-4 w-4" />
+          <LocateFixed className="w-full" />
         </button>
       </div>
     </div>
@@ -173,11 +188,13 @@ type LeafletMapProps = {
   issues: Issue[];
   mapCenter: [number, number];
   onIssueAction?: (issueId: number, action: "upvote") => void;
+  isExpanded?: boolean;
 };
 
 export default function LeafletMap({
   issues,
   mapCenter,
+  isExpanded = false,
   onIssueAction,
 }: LeafletMapProps) {
   return (
@@ -189,6 +206,7 @@ export default function LeafletMap({
         className="rounded-b-lg z-0"
       >
         <MapUpdater center={mapCenter} />
+        <MapResizeUpdater isExpanded={isExpanded} />
 
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -235,14 +253,14 @@ export default function LeafletMap({
                     })}
                   </p>
 
-                  <div className="pt-3 border-t mt-2">
+                  {/* <div className="pt-3 border-t mt-2">
                     <button
                       onClick={() => onIssueAction?.(issue.id, "upvote")}
                       className="w-full bg-slate-100 text-slate-800 py-1.5 rounded-md text-xs font-bold hover:bg-blue-50 hover:text-blue-600 transition-colors"
                     >
                       Upvote
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               </Popup>
             </Marker>

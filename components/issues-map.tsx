@@ -14,6 +14,7 @@ import {
   ChevronDown,
   RefreshCw,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), {
@@ -52,10 +53,9 @@ export default function IssuesMap({ className }: { className?: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // We start this as null so we know when it's actively fetching
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(
-    null,
-  );
+  const [userLocation, setUserLocation] = useState<[number, number]>([
+    28.6139, 77.209,
+  ]);
 
   const {
     data: issues = [],
@@ -88,7 +88,11 @@ export default function IssuesMap({ className }: { className?: string }) {
   // Wait for BOTH the issues to load AND the user's location to be found
   if (isLoading || !userLocation) {
     return (
-      <Card className={className}>
+      <Card
+        className={`${className} flex flex-col transition-all duration-300 ${
+          isExpanded ? "fixed inset-4 z-50 shadow-2xl bg-background" : ""
+        }`}
+      >
         <CardHeader>
           <div className="flex justify-between items-center">
             <div className="flex gap-2 items-center">
@@ -139,7 +143,9 @@ export default function IssuesMap({ className }: { className?: string }) {
 
   return (
     <Card
-      className={`${className} transition-all duration-300 ${isExpanded ? "fixed inset-4 z-50 shadow-2xl" : ""}`}
+      className={`${className} flex flex-col transition-all duration-300 ${
+        isExpanded ? "fixed inset-4 z-50 shadow-2xl bg-background" : ""
+      }`}
     >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
@@ -180,15 +186,18 @@ export default function IssuesMap({ className }: { className?: string }) {
       </CardHeader>
 
       {!isCollapsed && (
-        <CardContent className="p-0">
+        <CardContent className="p-0 flex-1 flex flex-col">
           <div
-            className={`${isExpanded ? "h-[calc(100vh-200px)]" : "h-48 md:h-64"} transition-all duration-300`}
+            className={`w-full relative transition-all duration-300 ${
+              isExpanded ? "flex-1" : "h-48 md:h-64"
+            }`}
           >
-            {/* The map is guaranteed to mount with the correct userLocation now */}
+            {/* Pass isExpanded down so Leaflet knows when to recalculate size */}
             <LeafletMap
               issues={issues}
               mapCenter={userLocation}
               onIssueAction={handleIssueAction}
+              isExpanded={isExpanded}
             />
           </div>
 
