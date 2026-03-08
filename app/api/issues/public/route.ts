@@ -91,9 +91,8 @@ import { createClient } from '@supabase/supabase-js';
 
 // 1. INITIALIZE OUTSIDE THE HANDLER
 // This ensures the client is created once and reused, preventing memory leaks and socket congestion.
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder_key";
 const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: false }
 });
