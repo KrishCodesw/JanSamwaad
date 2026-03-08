@@ -222,7 +222,6 @@ export default function IssuesListClient() {
     setIssues((prev) =>
       prev.map((issue) => {
         if (issue.id === issueId) {
-          // Normalize vote_count to a number
           const currentVotes =
             typeof issue.vote_count === "object"
               ? issue.vote_count?.count || 0
@@ -235,14 +234,51 @@ export default function IssuesListClient() {
 
     // 2. Fire the API call in the background
     try {
-      await fetch(`/api/issues/${issueId}/vote`, {
+      const res = await fetch(`/api/issues/${issueId}/vote`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({}),
       });
+
+      // 3. Check if the database rejected the vote (e.g. 409 Already Voted)
+      if (!res.ok) {
+        if (res.status === 409) {
+          console.log("You have already voted for this issue.");
+        } else {
+          console.error("Server error during upvote.");
+        }
+
+        // ROLLBACK: The database rejected it, so we subtract the vote back off the screen
+        setIssues((prev) =>
+          prev.map((issue) => {
+            if (issue.id === issueId) {
+              const currentVotes =
+                typeof issue.vote_count === "object"
+                  ? issue.vote_count?.count || 0
+                  : issue.vote_count || 0;
+              // Prevent it from accidentally going below 0
+              return { ...issue, vote_count: Math.max(0, currentVotes - 1) };
+            }
+            return issue;
+          }),
+        );
+      }
     } catch (error) {
-      console.error("Vote failed", error);
-      // Optional: You could revert the state here if the API fails
+      console.error("Vote network failed", error);
+
+      // ROLLBACK: The user's internet died, so we subtract the vote back
+      setIssues((prev) =>
+        prev.map((issue) => {
+          if (issue.id === issueId) {
+            const currentVotes =
+              typeof issue.vote_count === "object"
+                ? issue.vote_count?.count || 0
+                : issue.vote_count || 0;
+            return { ...issue, vote_count: Math.max(0, currentVotes - 1) };
+          }
+          return issue;
+        }),
+      );
     }
   };
   const handleRefresh = () => {
