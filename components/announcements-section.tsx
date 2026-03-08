@@ -100,7 +100,7 @@ export default function AnnouncementsSection() {
   };
 
   const visibleAnnouncements = announcements.filter(
-    (a) => !dismissed.has(a.id)
+    (a) => !dismissed.has(a.id),
   );
   const displayedAnnouncements = showAll
     ? visibleAnnouncements
@@ -165,8 +165,8 @@ export default function AnnouncementsSection() {
                         announcement.priority === "urgent"
                           ? "bg-red-100 dark:bg-red-900"
                           : announcement.priority === "high"
-                          ? "bg-orange-100 dark:bg-orange-900"
-                          : "bg-blue-100 dark:bg-blue-900"
+                            ? "bg-orange-100 dark:bg-orange-900"
+                            : "bg-blue-100 dark:bg-blue-900"
                       }`}
                     >
                       <IconComponent
@@ -174,8 +174,8 @@ export default function AnnouncementsSection() {
                           announcement.priority === "urgent"
                             ? "text-red-600 dark:text-red-400"
                             : announcement.priority === "high"
-                            ? "text-orange-600 dark:text-orange-400"
-                            : "text-blue-600 dark:text-blue-400"
+                              ? "text-orange-600 dark:text-orange-400"
+                              : "text-blue-600 dark:text-blue-400"
                         }`}
                       />
                     </div>
@@ -255,7 +255,7 @@ export default function AnnouncementsSection() {
                             year: "numeric",
                             hour: "2-digit",
                             minute: "2-digit",
-                          }
+                          },
                         )}
                       </div>
 
@@ -267,7 +267,7 @@ export default function AnnouncementsSection() {
                             {
                               month: "short",
                               day: "numeric",
-                            }
+                            },
                           )}
                         </div>
                       )}

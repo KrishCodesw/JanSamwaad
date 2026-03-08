@@ -1,11 +1,11 @@
-import { Navigation } from '@/components/navigation'
-import IssuesListClient from '@/components/issues-list-client'
-import { createClient } from '@/lib/supabase/server'
+import { Navigation } from "@/components/navigation";
+import IssuesListClient from "@/components/issues-list-client";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function IssuesPage() {
-  const supabase = await createClient()
-  const { data } = await supabase.auth.getClaims()
-  const user = data?.claims
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims;
 
   return (
     <main className="min-h-screen flex flex-col">
@@ -20,6 +20,5 @@ export default async function IssuesPage() {
         <IssuesListClient />
       </div>
     </main>
-  )
+  );
 }
-
