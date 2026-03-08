@@ -218,20 +218,22 @@ export default function IssuesListClient() {
   // --- HANDLERS ---
 
   const handleUpvote = async (issueId: number) => {
+    // 1. Optimistic UI: Instantly update the list state
     setIssues((prev) =>
       prev.map((issue) => {
         if (issue.id === issueId) {
+          // Normalize vote_count to a number
           const currentVotes =
             typeof issue.vote_count === "object"
               ? issue.vote_count?.count || 0
               : issue.vote_count || 0;
-
           return { ...issue, vote_count: currentVotes + 1 };
         }
         return issue;
       }),
     );
 
+    // 2. Fire the API call in the background
     try {
       await fetch(`/api/issues/${issueId}/vote`, {
         method: "POST",
@@ -240,9 +242,9 @@ export default function IssuesListClient() {
       });
     } catch (error) {
       console.error("Vote failed", error);
+      // Optional: You could revert the state here if the API fails
     }
   };
-
   const handleRefresh = () => {
     setPage(1);
     fetchIssues(1, false);
