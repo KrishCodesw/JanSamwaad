@@ -50,7 +50,14 @@ export async function GET(request: Request) {
     // Pagination (fetching limit + 1)
     query = query.range(from, to);
 
+
+    const startTime = performance.now();
+
+
     const { data: issues, error } = await query;
+
+    const endTime = performance.now();
+console.log(`Supabase Query Took: ${Math.round(endTime - startTime)}ms`);
 
     if (error) {
       console.error('Fetch error:', error);
