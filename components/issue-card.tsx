@@ -12,7 +12,8 @@ import {
   Flag,
   Eye,
   User,
-  X, // Added X icon for the close button
+  Loader2,
+  X,
 } from "lucide-react";
 
 type StatusChange = {
@@ -72,15 +73,21 @@ export function IssueCard({
     if (!issue.status_changes || issue.status_changes.length === 0) return null;
     return issue.status_changes.sort(
       (a, b) =>
-        new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime()
+        new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime(),
     )[0];
   };
 
   const latestStatusChange = getLatestStatusChange(issue);
   const [upvoting, setUpvoting] = useState(false);
   const [hasUpvoted, setHasUpvoted] = useState(false);
-  const [showImage, setShowImage] = useState(false); // Changed from isImageVisible
+  const [showImage, setShowImage] = useState(false);
   const [voteCount, setVoteCount] = useState(issue.vote_count || 0);
+
+  // Image fetching states
+  const [fetchedImages, setFetchedImages] = useState<{ url: string }[] | null>(
+    null,
+  );
+  const [loadingImages, setLoadingImages] = useState(false);
 
   const handleUpvote = async () => {
     if (!onUpvote || hasUpvoted || upvoting) return;
@@ -97,11 +104,31 @@ export function IssueCard({
     }
   };
 
+  // Triggers when the user clicks the Eye icon
+  const handleViewImages = async () => {
+    setShowImage(true);
+
+    // Only fetch if we haven't already fetched them during this session
+    if (fetchedImages === null) {
+      setLoadingImages(true);
+      try {
+        const res = await fetch(`/api/issues/${issue.id}/images`);
+        const data = await res.json();
+        setFetchedImages(data);
+      } catch (error) {
+        console.error("Failed to fetch images", error);
+        setFetchedImages([]); // Set to empty array so we don't infinitely retry on error
+      } finally {
+        setLoadingImages(false);
+      }
+    }
+  };
+
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor(
-      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60),
     );
 
     if (diffInHours < 1) return "Just now";
@@ -113,7 +140,6 @@ export function IssueCard({
 
   return (
     <Card
-      // Added 'relative' and 'overflow-hidden' for the overlay to work
       className={`relative overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02] dark:bg-gray-900 dark:hover:bg-gray-800 dark:border-gray-700 h-full flex flex-col ${
         issue.flagged
           ? "border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950"
@@ -123,7 +149,6 @@ export function IssueCard({
       <div className="flex flex-col h-full">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            {/* Left side: ID, Flag, Badges */}
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-mono text-muted-foreground dark:text-gray-400">
@@ -163,18 +188,15 @@ export function IssueCard({
               </div>
             </div>
 
-            {/* Right side: Actions (Vote + Eye) */}
             <div className="flex items-center gap-2">
-              {issue.images && issue.images.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowImage(true)}
-                  className="h-8 w-8 p-0 dark:text-gray-400 dark:hover:bg-gray-800"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleViewImages}
+                className="h-8 w-8 p-0 dark:text-gray-400 dark:hover:bg-gray-800"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
 
               {onUpvote && (
                 <Button
@@ -201,7 +223,6 @@ export function IssueCard({
             {issue.description}
           </p>
 
-          {/* Latest status change */}
           {latestStatusChange && (
             <div className="bg-muted/50 dark:bg-gray-800 p-2 rounded-md text-xs dark:text-gray-400 mt-auto">
               <div className="flex items-center gap-2">
@@ -228,44 +249,55 @@ export function IssueCard({
         </CardContent>
       </div>
 
-      {/* --- NEW OVERLAY REVEAL SECTION --- */}
-      {issue.images && issue.images.length > 0 && (
-        <div
-          // This div covers the entire card
-          className={`absolute inset-0 z-20 bg-background/95 backdrop-blur-sm transition-transform duration-300 ease-in-out ${
-            showImage ? "translate-y-0" : "translate-y-full"
-          }`}
-          onClick={() => setShowImage(false)} // Close when clicking anywhere on overlay
-        >
-          {/* Close Button */}
-          <div className="absolute top-3 right-3 z-30">
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-8 w-8 rounded-full shadow-md bg-white/80 hover:bg-white dark:bg-black/50 dark:hover:bg-black/80"
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent double triggering
-                setShowImage(false);
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* The Image */}
-          <div className="relative w-full h-full cursor-pointer">
-            <Image
-              src={issue.images[0].url}
-              alt="Issue evidence"
-              fill
-              className="object-cover"
-              priority // Load faster since user asked for it
-            />
-            {/* Optional Gradient for text readability if you add text later */}
-            <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
-          </div>
+      {/* --- OVERLAY SECTION (Fetches and displays on demand) --- */}
+      {/* --- OVERLAY SECTION (Always in DOM so the animation works!) --- */}
+      <div
+        className={`absolute inset-0 z-20 bg-background/95 backdrop-blur-sm transition-transform duration-300 ease-in-out ${
+          showImage ? "translate-y-0" : "translate-y-full"
+        }`}
+        onClick={() => setShowImage(false)}
+      >
+        <div className="absolute top-3 right-3 z-30">
+          <Button
+            variant="secondary"
+            size="icon"
+            className="h-8 w-8 rounded-full shadow-md bg-white/80 hover:bg-white dark:bg-black/50 dark:hover:bg-black/80"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowImage(false);
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
-      )}
+
+        <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
+          {loadingImages ? (
+            <div className="flex flex-col items-center text-muted-foreground gap-2">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <p className="text-sm">Loading image...</p>
+            </div>
+          ) : fetchedImages && fetchedImages.length > 0 ? (
+            <>
+              <Image
+                src={fetchedImages[0].url}
+                alt="Issue evidence"
+                fill
+                className="object-contain"
+                priority
+              />
+              <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
+            </>
+          ) : (
+            /* Only show this text if we actually tried fetching and found nothing */
+            fetchedImages !== null && (
+              <p className="text-muted-foreground text-sm font-medium">
+                No images provided for this issue.
+              </p>
+            )
+          )}
+        </div>
+      </div>
     </Card>
   );
 }
