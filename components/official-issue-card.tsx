@@ -11,20 +11,28 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
   MapPin,
   Clock,
   Flag,
   Eye,
-  EyeOff, // Added EyeOff for the toggle state
+  EyeOff,
   UploadCloud,
   CheckCircle2,
   Loader2,
   X,
   Camera,
   Upload,
+  AlertOctagon,
 } from "lucide-react";
 
-// Note: Replace this import with the actual path to your digipin encoder function
 import { encode } from "@pranamphd/digipin";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -48,7 +56,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   other: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400",
 };
 
-// Helper function to convert base64 Data URL to File
 function dataURLtoFile(dataurl: string, filename: string) {
   const arr = dataurl.split(",");
   const mimeMatch = arr[0].match(/:(.*?);/);
@@ -70,16 +77,17 @@ export function OfficialIssueCard({
   issue: any;
   onResolved: () => void;
 }) {
-  const [showImageOverlay, setShowImageOverlay] = useState(false); // For full screen overlay
-  const [showReferenceImage, setShowReferenceImage] = useState(false); // For inline reference
+  const [showImageOverlay, setShowImageOverlay] = useState(false);
+  const [showReferenceImage, setShowReferenceImage] = useState(false);
   const [isResolving, setIsResolving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [digiPin, setDigiPin] = useState<string | null>(null);
 
-  // Form State
-  const [note, setNote] = useState("");
+  const [isRoadblockModalOpen, setIsRoadblockModalOpen] = useState(false);
+  const [roadblockNote, setRoadblockNote] = useState("");
+  const [submittingRoadblock, setSubmittingRoadblock] = useState(false);
 
-  // Camera & Image State
+  const [note, setNote] = useState("");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [isBackCamera, setIsBackCamera] = useState(true);
@@ -104,7 +112,31 @@ export function OfficialIssueCard({
     }
   }, [issue.latitude, issue.longitude]);
 
-  // --- CAMERA FUNCTIONS ---
+  const handleRoadblockSubmit = async () => {
+    if (!roadblockNote.trim()) return;
+    setSubmittingRoadblock(true);
+
+    try {
+      const response = await fetch(`/api/issues/${issue.id}/roadblock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes: roadblockNote }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to report roadblock");
+      }
+
+      setIsRoadblockModalOpen(false);
+      onResolved();
+    } catch (error: any) {
+      alert(`Error: ${error.message}`);
+    } finally {
+      setSubmittingRoadblock(false);
+    }
+  };
+
   const startCamera = async () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -231,7 +263,6 @@ export function OfficialIssueCard({
     setShowReferenceImage(false);
   };
 
-  // --- SUBMISSION ---
   const handleResolveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -297,274 +328,330 @@ export function OfficialIssueCard({
   };
 
   return (
-    <Card className="relative overflow-hidden flex flex-col h-cover dark:bg-black dark:border-gray-700">
-      <div className="flex flex-col flex-grow">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-mono text-muted-foreground">
-                  #{issue.id}
-                </span>
-                {issue.flagged && <Flag className="h-4 w-4 text-red-500" />}
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge
-                  className={
-                    STATUS_COLORS[issue.status] ||
-                    "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400"
-                  }
-                >
-                  {issue.status.replace("_", " ")}
-                </Badge>
-                {issue.tags?.map((tag: string) => (
+    <>
+      <Card className="relative overflow-hidden flex flex-col h-cover dark:bg-black dark:border-gray-700">
+        <div className="flex flex-col flex-grow">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono text-muted-foreground">
+                    #{issue.id}
+                  </span>
+                  {issue.flagged && <Flag className="h-4 w-4 text-red-500" />}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge
-                    key={tag}
-                    variant="outline"
-                    className={`border-gray-200 dark:border-gray-700 ${
-                      CATEGORY_COLORS[tag] ||
+                    className={
+                      STATUS_COLORS[issue.status] ||
                       "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400"
-                    }`}
+                    }
                   >
-                    {tag}
+                    {issue.status.replace("_", " ")}
                   </Badge>
-                ))}
+                  {issue.tags?.map((tag: string) => (
+                    <Badge
+                      key={tag}
+                      variant="outline"
+                      className={`border-gray-200 dark:border-gray-700 ${
+                        CATEGORY_COLORS[tag] ||
+                        "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400"
+                      }`}
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
-            {/* Top view icon for general card view */}
-            {issue.images && issue.images.length > 0 && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setShowImageOverlay(true)}
-                className="h-8 w-8 p-0"
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-3 flex-grow">
-          <p className="text-sm leading-relaxed dark:text-gray-300">
-            {issue.description}
-          </p>
-          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-2 border-t dark:border-gray-700">
-            <div className="flex items-center">
-              <Clock className="h-3 w-3 mr-1" />
-              Reported: {formatTimeAgo(issue.created_at)}
-            </div>
-            {digiPin && (
-              <div className="flex items-center hover:text-primary transition-colors">
-                <MapPin className="h-3 w-3 mr-1" />
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${issue.latitude},${issue.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 font-medium"
-                >
-                  {digiPin}
-                </a>
-              </div>
-            )}
-          </div>
-        </CardContent>
-
-        {/* Resolution Action Area */}
-        <CardFooter className="bg-muted/30 dark:bg-black flex flex-col items-stretch p-4">
-          {!isResolving ? (
-            <Button
-              className="w-full gap-2"
-              onClick={() => setIsResolving(true)}
-            >
-              <CheckCircle2 className="h-4 w-4" /> Update & Resolve
-            </Button>
-          ) : (
-            <form
-              onSubmit={handleResolveSubmit}
-              className="space-y-4 w-full animate-in fade-in slide-in-from-top-4"
-            >
-              {/* --- SPACE SAVING "BEFORE" IMAGE TOGGLE --- */}
               {issue.images && issue.images.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowImageOverlay(true)}
+                  className="h-8 w-8 p-0"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-3 flex-grow">
+            <p className="text-sm leading-relaxed dark:text-gray-300">
+              {issue.description}
+            </p>
+            <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-2 border-t dark:border-gray-700">
+              <div className="flex items-center">
+                <Clock className="h-3 w-3 mr-1" />
+                Reported: {formatTimeAgo(issue.created_at)}
+              </div>
+              {digiPin && (
+                <div className="flex items-center hover:text-primary transition-colors">
+                  <MapPin className="h-3 w-3 mr-1" />
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${issue.latitude},${issue.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 font-medium"
+                  >
+                    {digiPin}
+                  </a>
+                </div>
+              )}
+            </div>
+          </CardContent>
+
+          <CardFooter className="bg-muted/30 dark:bg-black flex flex-col items-stretch p-4">
+            {!isResolving ? (
+              <div className="flex gap-2 w-full">
+                <Button
+                  className="flex-1 gap-2"
+                  onClick={() => setIsResolving(true)}
+                >
+                  <CheckCircle2 className="h-4 w-4" /> Resolve
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1 gap-2 bg-red-700 hover:bg-red-800 text-white"
+                  onClick={() => setIsRoadblockModalOpen(true)}
+                >
+                  <AlertOctagon className="h-4 w-4" /> Escalate
+                </Button>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleResolveSubmit}
+                className="space-y-4 w-full animate-in fade-in slide-in-from-top-4"
+              >
+                {issue.images && issue.images.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-foreground">
+                        Resolution Notes
+                      </label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
+                        onClick={() =>
+                          setShowReferenceImage(!showReferenceImage)
+                        }
+                      >
+                        {showReferenceImage ? (
+                          <>
+                            <EyeOff className="h-3 w-3 mr-1" /> Hide Original
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="h-3 w-3 mr-1" /> View Original
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    {showReferenceImage && (
+                      <div className="relative h-40 w-full rounded-md border border-input overflow-hidden bg-black/5 dark:bg-white/5 animate-in zoom-in-95 duration-200">
+                        <Image
+                          src={issue.images[0].url || issue.images[0]}
+                          alt="Before evidence"
+                          fill
+                          className="object-contain bg-black/20"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                  {!issue.images?.length && (
                     <label className="text-xs font-medium text-foreground">
                       Resolution Notes
                     </label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-xs text-muted-foreground hover:text-primary"
-                      onClick={() => setShowReferenceImage(!showReferenceImage)}
-                    >
-                      {showReferenceImage ? (
-                        <>
-                          <EyeOff className="h-3 w-3 mr-1" /> Hide Original
-                        </>
-                      ) : (
-                        <>
-                          <Eye className="h-3 w-3 mr-1" /> View Original
-                        </>
-                      )}
-                    </Button>
-                  </div>
-
-                  {/* Image only loads/renders when state is true */}
-                  {showReferenceImage && (
-                    <div className="relative h-40 w-full rounded-md border border-input overflow-hidden bg-black/5 dark:bg-white/5 animate-in zoom-in-95 duration-200">
-                      <Image
-                        src={issue.images[0].url || issue.images[0]}
-                        alt="Before evidence"
-                        fill
-                        className="object-contain bg-black/20"
-                      />
-                    </div>
                   )}
+                  <textarea
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Describe the actions taken..."
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
                 </div>
-              )}
 
-              {/* Text Area (Label removed here since we moved it up to the toggle row) */}
-              <div className="space-y-2">
-                {!issue.images?.length && (
+                <div className="space-y-2">
                   <label className="text-xs font-medium text-foreground">
-                    Resolution Notes
+                    Proof of Work (Image)
                   </label>
-                )}
-                <textarea
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  placeholder="Describe the actions taken..."
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
-              </div>
+                  <div className="border border-input bg-background rounded-md p-3">
+                    {capturedImage ? (
+                      <div className="relative">
+                        <img
+                          src={capturedImage}
+                          alt="Proof of Work"
+                          className="w-full h-32 object-cover rounded-md"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-7 w-7"
+                          onClick={removeImage}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-center space-y-3">
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className={`w-full h-32 object-cover rounded-md bg-black ${
+                            cameraActive ? "block" : "hidden"
+                          } ${!isBackCamera ? "scale-x-[-1]" : ""}`}
+                        />
 
-              {/* Camera & Proof Upload Area */}
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-foreground">
-                  Proof of Work (Image)
-                </label>
-                <div className="border border-input bg-background rounded-md p-3">
-                  {capturedImage ? (
-                    <div className="relative">
-                      <img
-                        src={capturedImage}
-                        alt="Proof of Work"
-                        className="w-full h-32 object-cover rounded-md"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 h-7 w-7"
-                        onClick={removeImage}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-center space-y-3">
-                      <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className={`w-full h-32 object-cover rounded-md bg-black ${
-                          cameraActive ? "block" : "hidden"
-                        } ${!isBackCamera ? "scale-x-[-1]" : ""}`}
-                      />
+                        {cameraActive ? (
+                          <div className="flex gap-2 justify-center">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={captureImage}
+                              disabled={
+                                !videoRef.current ||
+                                videoRef.current.videoWidth === 0
+                              }
+                            >
+                              <Camera className="h-4 w-4 mr-2" /> Capture
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={stopCamera}
+                            >
+                              Stop
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2 justify-center">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={startCamera}
+                              disabled={cameraLoading}
+                            >
+                              <Camera className="h-4 w-4 mr-2" />
+                              {cameraLoading ? "Opening..." : "Camera"}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => fileInputRef.current?.click()}
+                            >
+                              <Upload className="h-4 w-4 mr-2" /> Upload
+                            </Button>
+                          </div>
+                        )}
 
-                      {cameraActive ? (
-                        <div className="flex gap-2 justify-center">
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={captureImage}
-                            disabled={
-                              !videoRef.current ||
-                              videoRef.current.videoWidth === 0
-                            }
-                          >
-                            <Camera className="h-4 w-4 mr-2" /> Capture
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={stopCamera}
-                          >
-                            Stop
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex gap-2 justify-center">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            onClick={startCamera}
-                            disabled={cameraLoading}
-                          >
-                            <Camera className="h-4 w-4 mr-2" />
-                            {cameraLoading ? "Opening..." : "Camera"}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => fileInputRef.current?.click()}
-                          >
-                            <Upload className="h-4 w-4 mr-2" /> Upload
-                          </Button>
-                        </div>
-                      )}
-
-                      {cameraError && (
-                        <p className="text-xs text-red-500 mt-2">
-                          {cameraError}
-                        </p>
-                      )}
-                    </div>
-                  )}
+                        {cameraError && (
+                          <p className="text-xs text-red-500 mt-2">
+                            {cameraError}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
                 </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-              </div>
 
-              <div className="flex gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={handleCancelResolution}
-                  disabled={submitting}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" className="flex-1" disabled={submitting}>
-                  {submitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />{" "}
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud className="h-4 w-4 mr-2" /> Submit Proof
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          )}
-        </CardFooter>
-      </div>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleCancelResolution}
+                    disabled={submitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />{" "}
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud className="h-4 w-4 mr-2" /> Submit Proof
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </CardFooter>
+        </div>
+      </Card>
 
-      {/* OVERLAY REVEAL SECTION (Full Screen) */}
+      <Dialog
+        open={isRoadblockModalOpen}
+        onOpenChange={setIsRoadblockModalOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertOctagon className="h-5 w-5" />
+              Report Roadblock
+            </DialogTitle>
+            <DialogDescription>
+              Escalate this issue to the Department Admin if you lack the
+              budget, equipment, or jurisdiction to resolve it. This removes it
+              from your active tasks.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Reason for escalation <span className="text-red-500">*</span>
+              </label>
+              <Textarea
+                placeholder="e.g., This requires a heavy excavator and city budget approval..."
+                value={roadblockNote}
+                onChange={(e) => setRoadblockNote(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <Button
+              className="w-full bg-red-600 hover:bg-red-700 text-white"
+              disabled={submittingRoadblock || roadblockNote.trim().length < 10}
+              onClick={handleRoadblockSubmit}
+            >
+              {submittingRoadblock ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />{" "}
+                  Escalating...
+                </>
+              ) : (
+                "Escalate to Admin"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {issue.images && issue.images.length > 0 && (
         <div
           className={`absolute inset-0 z-20 bg-background/95 backdrop-blur-sm transition-transform duration-300 ease-in-out ${
@@ -597,8 +684,7 @@ export function OfficialIssueCard({
         </div>
       )}
 
-      {/* Hidden canvas for capturing video frame */}
       <canvas ref={canvasRef} style={{ display: "none" }} />
-    </Card>
+    </>
   );
 }
