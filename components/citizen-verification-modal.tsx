@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,14 +18,46 @@ import {
   Navigation,
 } from "lucide-react";
 
+// --- Frontend Haversine distance calculator ---
+function getDistanceInMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+) {
+  const R = 6371e3; // Earth's radius in meters
+  const p1 = (lat1 * Math.PI) / 180;
+  const p2 = (lat2 * Math.PI) / 180;
+  const deltaP = p2 - p1;
+  const deltaLon = lon2 - lon1;
+  const deltaLambda = (deltaLon * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaP / 2) * Math.sin(deltaP / 2) +
+    Math.cos(p1) *
+      Math.cos(p2) *
+      Math.sin(deltaLambda / 2) *
+      Math.sin(deltaLambda / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
 export function CitizenVerificationModal({
   issueId,
+  issueLat, // <-- NEW PROP
+  issueLng, // <-- NEW PROP
+  isOpen,
+  onClose,
   onSuccess,
 }: {
   issueId: number;
+  issueLat: number;
+  issueLng: number;
+  isOpen: boolean;
+  onClose: () => void;
   onSuccess?: () => void;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"initial" | "locating" | "form" | "success">(
     "initial",
@@ -37,10 +68,8 @@ export function CitizenVerificationModal({
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  // Reset state when modal closes
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    if (!open) {
+  useEffect(() => {
+    if (!isOpen) {
       setTimeout(() => {
         setStep("initial");
         setLocation(null);
@@ -48,7 +77,7 @@ export function CitizenVerificationModal({
         setError(null);
       }, 300);
     }
-  };
+  }, [isOpen]);
 
   const handleGetLocation = () => {
     setError(null);
@@ -62,10 +91,28 @@ export function CitizenVerificationModal({
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+
+        // --- NEW: FRONTEND DISTANCE CHECK ---
+        const distance = getDistanceInMeters(
+          userLat,
+          userLng,
+          issueLat,
+          issueLng,
+        );
+
+        if (distance > 50) {
+          setError(
+            `Digipin Check Failed. You are ${Math.round(distance)} meters away. You must be within 50 meters to verify.`,
+          );
+          setStep("initial");
+          return;
+        }
+        // ------------------------------------
+
+        // If they pass, let them see the form!
+        setLocation({ lat: userLat, lng: userLng });
         setStep("form");
       },
       (err) => {
@@ -75,7 +122,6 @@ export function CitizenVerificationModal({
         );
         setStep("initial");
       },
-      // Force high accuracy so the 50-meter Digipin lock works reliably
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   };
@@ -104,10 +150,9 @@ export function CitizenVerificationModal({
       }
 
       setStep("success");
-      // Trigger parent refresh after 2 seconds so they can see the success message
       if (onSuccess) {
         setTimeout(() => {
-          setIsOpen(false);
+          onClose();
           onSuccess();
         }, 2000);
       }
@@ -119,14 +164,7 @@ export function CitizenVerificationModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="destructive" className="w-full sm:w-auto">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          Needs More Work
-        </Button>
-      </DialogTrigger>
-
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Issue Verification</DialogTitle>
@@ -144,7 +182,6 @@ export function CitizenVerificationModal({
             </div>
           )}
 
-          {/* STEP 1: Get GPS */}
           {step === "initial" && (
             <div className="space-y-4 text-center py-4">
               <div className="mx-auto bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-2">
@@ -162,7 +199,6 @@ export function CitizenVerificationModal({
             </div>
           )}
 
-          {/* STEP 2: Loading GPS */}
           {step === "locating" && (
             <div className="space-y-4 text-center py-8">
               <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
@@ -172,12 +208,11 @@ export function CitizenVerificationModal({
             </div>
           )}
 
-          {/* STEP 3: The Form */}
           {step === "form" && (
             <div className="space-y-4">
               <div className="bg-green-50 text-green-700 p-2 rounded text-xs flex items-center gap-2 border border-green-200">
                 <CheckCircle2 className="h-4 w-4" />
-                Location acquired. Ready to submit feedback.
+                Location verified. Ready to submit feedback.
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">
@@ -185,7 +220,7 @@ export function CitizenVerificationModal({
                   <span className="text-red-500">*</span>
                 </label>
                 <Textarea
-                  placeholder="e.g., They just filled the pothole with loose gravel and it washed away."
+                  placeholder="e.g., They just filled the pothole with loose gravel..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={4}
@@ -208,7 +243,6 @@ export function CitizenVerificationModal({
             </div>
           )}
 
-          {/* STEP 4: Success */}
           {step === "success" && (
             <div className="space-y-4 text-center py-6">
               <div className="mx-auto bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mb-2">
