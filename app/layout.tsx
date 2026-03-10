@@ -75,7 +75,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico" },
+      { url: "/JanSamvaad.png" },
       {
         url: "https://i.postimg.cc/d1hG5p43/Jan-Samvaad.png",
         sizes: "16x16",

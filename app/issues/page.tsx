@@ -17,7 +17,10 @@ export default async function IssuesPage() {
             Issues reported in your area and around the community
           </p>
         </div>
-        <IssuesListClient />
+        <IssuesListClient
+          currentUserEmail={user?.email}
+          currentUserId={user?.id}
+        />
       </div>
     </main>
   );

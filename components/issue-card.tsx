@@ -14,7 +14,10 @@ import {
   User,
   Loader2,
   X,
+  AlertCircle,
 } from "lucide-react";
+
+import { CitizenVerificationModal } from "./citizen-verification-modal";
 
 type StatusChange = {
   from_status: string | null;
@@ -37,8 +40,12 @@ type Issue = {
   longitude?: number;
   vote_count?: number;
   status_changes?: StatusChange[];
+  // --- NEW: Added so we can check ownership ---
+  reporter_email?: string;
+  reporter_id?: string;
 };
 
+// ... (STATUS_COLORS and CATEGORY_COLORS remain exactly the same) ...
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400",
   under_progress:
@@ -64,10 +71,16 @@ export function IssueCard({
   issue,
   onUpvote,
   showDistance,
+  currentUserEmail, // --- NEW PROP: Pass this from the parent list ---
+  currentUserId, // --- NEW PROP: Pass this from the parent list ---
+  initialHasUpvoted = false, // --- NEW PROP: So we know if they upvoted before this session
 }: {
   issue: Issue;
   onUpvote?: (id: number) => Promise<void>;
   showDistance?: number;
+  currentUserEmail?: string | null;
+  currentUserId?: string | null;
+  initialHasUpvoted?: boolean;
 }) {
   const getLatestStatusChange = (issue: Issue): StatusChange | null => {
     if (!issue.status_changes || issue.status_changes.length === 0) return null;
@@ -79,15 +92,26 @@ export function IssueCard({
 
   const latestStatusChange = getLatestStatusChange(issue);
   const [upvoting, setUpvoting] = useState(false);
-  const [hasUpvoted, setHasUpvoted] = useState(false);
+  const [hasUpvoted, setHasUpvoted] = useState(initialHasUpvoted);
   const [showImage, setShowImage] = useState(false);
   const [voteCount, setVoteCount] = useState(issue.vote_count || 0);
 
-  // Image fetching states
   const [fetchedImages, setFetchedImages] = useState<{ url: string }[] | null>(
     null,
   );
   const [loadingImages, setLoadingImages] = useState(false);
+
+  // --- NEW: THE VISIBILITY LOGIC ---
+  // Is this user the original reporter?
+  const isReporter = !!(
+    (currentUserEmail &&
+      issue.reporter_email &&
+      currentUserEmail.toLowerCase() === issue.reporter_email.toLowerCase()) ||
+    (currentUserId && issue.reporter_id && currentUserId === issue.reporter_id)
+  );
+  // Do they have the right to verify?
+  const canVerify = isReporter || hasUpvoted;
+  // ---------------------------------
 
   const handleUpvote = async () => {
     if (!onUpvote || hasUpvoted || upvoting) return;
@@ -104,11 +128,8 @@ export function IssueCard({
     }
   };
 
-  // Triggers when the user clicks the Eye icon
   const handleViewImages = async () => {
     setShowImage(true);
-
-    // Only fetch if we haven't already fetched them during this session
     if (fetchedImages === null) {
       setLoadingImages(true);
       try {
@@ -117,7 +138,7 @@ export function IssueCard({
         setFetchedImages(data);
       } catch (error) {
         console.error("Failed to fetch images", error);
-        setFetchedImages([]); // Set to empty array so we don't infinitely retry on error
+        setFetchedImages([]);
       } finally {
         setLoadingImages(false);
       }
@@ -167,8 +188,7 @@ export function IssueCard({
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge
                   className={
-                    STATUS_COLORS[issue.status] ||
-                    "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400"
+                    STATUS_COLORS[issue.status] || "bg-gray-100 text-gray-800"
                   }
                 >
                   {issue.status.replace("_", " ")}
@@ -177,10 +197,9 @@ export function IssueCard({
                   <Badge
                     key={tag}
                     variant="outline"
-                    className={`border-gray-200 dark:border-gray-700 ${
-                      CATEGORY_COLORS[tag] ||
-                      "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400"
-                    }`}
+                    className={
+                      CATEGORY_COLORS[tag] || "bg-gray-100 text-gray-800"
+                    }
                   >
                     {tag}
                   </Badge>
@@ -193,7 +212,7 @@ export function IssueCard({
                 size="sm"
                 variant="ghost"
                 onClick={handleViewImages}
-                className="h-8 w-8 p-0 dark:text-gray-400 dark:hover:bg-gray-800"
+                className="h-8 w-8 p-0"
               >
                 <Eye className="h-4 w-4" />
               </Button>
@@ -204,7 +223,7 @@ export function IssueCard({
                   variant={hasUpvoted ? "default" : "outline"}
                   onClick={handleUpvote}
                   disabled={upvoting || hasUpvoted}
-                  className="flex items-center gap-1 h-8 dark:text-gray-400 dark:border-gray-700 dark:hover:bg-gray-800 dark:bg-gray-900"
+                  className="flex items-center gap-1 h-8"
                 >
                   <ThumbsUp
                     className={`h-3 w-3 ${hasUpvoted ? "fill-current" : ""}`}
@@ -218,39 +237,63 @@ export function IssueCard({
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-3 flex-grow">
+        <CardContent className="space-y-3 flex-grow flex flex-col">
           <p className="text-sm leading-relaxed dark:text-gray-300">
             {issue.description}
           </p>
 
-          {latestStatusChange && (
-            <div className="bg-muted/50 dark:bg-gray-800 p-2 rounded-md text-xs dark:text-gray-400 mt-auto">
-              <div className="flex items-center gap-2">
-                <User className="h-3 w-3" />
-                <span>
-                  <span className="font-medium">
-                    {latestStatusChange.profiles?.display_name || "Official"}
-                  </span>{" "}
-                  updated status to{" "}
-                  <span className="font-medium">
-                    {latestStatusChange.to_status.replace("_", " ")}
-                  </span>
+          {/* --- NEW UI: Sleek Verification Banner --- */}
+          {issue.status === "closed" && canVerify && (
+            <div
+              className="mt-4 p-3 bg-red-50/50 border border-red-100 dark:bg-red-950/20 dark:border-red-900/30 rounded-lg flex flex-col gap-3 w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2 text-sm">
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+                <span className="font-medium text-red-800 dark:text-red-300">
+                  Issue still not fixed?
                 </span>
+              </div>
+              <div className="w-full" onClick={(e) => e.stopPropagation()}>
+                <CitizenVerificationModal
+                  issueId={issue.id}
+                  onSuccess={() => {
+                    window.location.reload();
+                  }}
+                />
               </div>
             </div>
           )}
+          {/* ----------------------------------------- */}
+          <div className="mt-auto pt-4 space-y-2">
+            {latestStatusChange && (
+              <div className="bg-muted/50 dark:bg-gray-800 p-2 rounded-md text-xs dark:text-gray-400">
+                <div className="flex items-center gap-2">
+                  <User className="h-3 w-3" />
+                  <span>
+                    <span className="font-medium">
+                      {latestStatusChange.profiles?.display_name || "Official"}
+                    </span>{" "}
+                    updated status to{" "}
+                    <span className="font-medium">
+                      {latestStatusChange.to_status.replace("_", " ")}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            )}
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground dark:text-gray-400 pt-2 border-t dark:border-gray-700">
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {formatTimeAgo(issue.created_at)}
+            <div className="flex items-center justify-between text-xs text-muted-foreground dark:text-gray-400 pt-2 border-t dark:border-gray-700">
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {formatTimeAgo(issue.created_at)}
+              </div>
             </div>
           </div>
         </CardContent>
       </div>
 
-      {/* --- OVERLAY SECTION (Fetches and displays on demand) --- */}
-      {/* --- OVERLAY SECTION (Always in DOM so the animation works!) --- */}
+      {/* --- Overlay Section (Unchanged) --- */}
       <div
         className={`absolute inset-0 z-20 bg-background/95 backdrop-blur-sm transition-transform duration-300 ease-in-out ${
           showImage ? "translate-y-0" : "translate-y-full"
@@ -286,10 +329,8 @@ export function IssueCard({
                 className="object-contain"
                 priority
               />
-              <div className="absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
             </>
           ) : (
-            /* Only show this text if we actually tried fetching and found nothing */
             fetchedImages !== null && (
               <p className="text-muted-foreground text-sm font-medium">
                 No images provided for this issue.

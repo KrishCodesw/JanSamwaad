@@ -5,13 +5,14 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "res.cloudinary.com" },
-      { protocol: "https", hostname: "imagedelivery.net" },
-      { protocol: "https", hostname: "*.supabase.co" },
-    ],
-  },
+ images: {
+  remotePatterns: [
+    { protocol: "https", hostname: "res.cloudinary.com" },
+    { protocol: "https", hostname: "imagedelivery.net" },
+    { protocol: "https", hostname: "*.supabase.co" },
+    { protocol: "https", hostname: "i.postimg.cc" }
+  ],
+},
 
   // Optimize for production
   compress: true,
@@ -30,20 +31,14 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            // 👇 UPDATED CSP POLICY
-            value:
-              "default-src 'self'; " +
-              // Added 'blob:' to script-src (fallback)
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:; " +
-              "style-src 'self' 'unsafe-inline'; " +
-              // Added 'blob:' and CartoCDN to img-src
-              "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://server.arcgisonline.com; https://cdnjs.cloudflare.com https://rmiyogmikonumdhrpnyf.supabase.co https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com;  " +
-              "font-src 'self' data:; " +
-              // Added explicit worker-src for map workers
-              "worker-src 'self' blob:; " +
-              "style-src 'self' 'unsafe-inline' https://unpkg.com; " +
-              // Added CartoCDN to connect-src (CRITICAL for map tiles)
-              "connect-src 'self' https://*.supabase.co https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com;",
+           value:
+  "default-src 'self'; " +
+  "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://cdnjs.cloudflare.com; " +
+  "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; " +
+  "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://server.arcgisonline.com https://cdnjs.cloudflare.com https://rmiyogmikonumdhrpnyf.supabase.co https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://i.postimg.cc; " +
+  "font-src 'self' data: https://cdnjs.cloudflare.com; " +
+  "worker-src 'self' blob:; " +
+  "connect-src 'self' https://*.supabase.co https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com;"
           },
           {
             key: "X-Content-Type-Options",

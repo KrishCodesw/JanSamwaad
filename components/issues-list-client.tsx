@@ -71,7 +71,14 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 // --- MAIN COMPONENT ---
-export default function IssuesListClient() {
+// Added props to receive the user data from the parent Server Component
+export default function IssuesListClient({
+  currentUserEmail,
+  currentUserId,
+}: {
+  currentUserEmail?: string | null;
+  currentUserId?: string | null;
+}) {
   // State: Data
   const [issues, setIssues] = useState<Issue[]>([]);
 
@@ -240,7 +247,7 @@ export default function IssuesListClient() {
         body: JSON.stringify({}),
       });
 
-      // 3. Check if the database rejected the vote (e.g. 409 Already Voted)
+      // 3. Check if the database rejected the vote
       if (!res.ok) {
         if (res.status === 409) {
           console.log("You have already voted for this issue.");
@@ -248,7 +255,7 @@ export default function IssuesListClient() {
           console.error("Server error during upvote.");
         }
 
-        // ROLLBACK: The database rejected it, so we subtract the vote back off the screen
+        // ROLLBACK
         setIssues((prev) =>
           prev.map((issue) => {
             if (issue.id === issueId) {
@@ -256,7 +263,6 @@ export default function IssuesListClient() {
                 typeof issue.vote_count === "object"
                   ? issue.vote_count?.count || 0
                   : issue.vote_count || 0;
-              // Prevent it from accidentally going below 0
               return { ...issue, vote_count: Math.max(0, currentVotes - 1) };
             }
             return issue;
@@ -266,7 +272,7 @@ export default function IssuesListClient() {
     } catch (error) {
       console.error("Vote network failed", error);
 
-      // ROLLBACK: The user's internet died, so we subtract the vote back
+      // ROLLBACK
       setIssues((prev) =>
         prev.map((issue) => {
           if (issue.id === issueId) {
@@ -429,11 +435,13 @@ export default function IssuesListClient() {
                   issue={normalizedIssue}
                   onUpvote={handleUpvote}
                   showDistance={distance}
+                  currentUserEmail={currentUserEmail} // PASSED DOWN HERE
+                  currentUserId={currentUserId} // PASSED DOWN HERE
                 />
               );
             })}
 
-            {/* Pagination Skeletons (Shows at the bottom while fetching next page) */}
+            {/* Pagination Skeletons */}
             {loadingMore && (
               <>
                 <SkeletonCard />
