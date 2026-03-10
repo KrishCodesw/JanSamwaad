@@ -67,6 +67,7 @@ import {
   MoreHorizontal,
   Shield,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 
 type AdminStats = {
@@ -91,7 +92,6 @@ type Issue = {
   created_at: string;
   latitude: number;
   longitude: number;
-  // digipin?: string;
   reporter_email: string;
   vote_count?: { count: number }[] | null;
   images: { url: string }[];
@@ -108,14 +108,14 @@ type User = {
   display_name: string;
   email: string;
   role: string;
-  department: string; // Now a name string, not an ID
+  department: string;
   region: string;
   joined_at: string;
   reports_count: number;
-  workload_count: number; // New: For tracking official's tasks
+  workload_count: number;
   votes_count: number;
-  status_label: string; // New: e.g., "Overloaded", "Idle"
-  status_color: string; // New: e.g., "red", "green"
+  status_label: string;
+  status_color: string;
 };
 
 type Department = {
@@ -185,7 +185,6 @@ export default function AdminDashboard() {
 
   // User management
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  // Add this near your other state variables
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState("all");
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
@@ -219,6 +218,13 @@ export default function AdminDashboard() {
     priority: "normal",
   });
 
+  // --- NEW: Escalation Review States ---
+  const [escalationIssue, setEscalationIssue] = useState<Issue | null>(null);
+  const [escalationAction, setEscalationAction] = useState<
+    "closed" | "under_progress" | null
+  >(null);
+  const [escalationNote, setEscalationNote] = useState("");
+
   const handleEditUserClick = (user: User) => {
     setEditingUser(user);
     setIsEditUserOpen(true);
@@ -228,10 +234,7 @@ export default function AdminDashboard() {
     if (activeTab === "overview") {
       fetchStats();
     }
-
-    // if (activeTab === "issues") {
     fetchIssues();
-    // }
     if (activeTab === "announcements") {
       fetchAnnouncements();
     }
@@ -257,6 +260,7 @@ export default function AdminDashboard() {
       setStatsLoading(false);
     }
   };
+
   const fetchDeptIssues = async (deptId: number) => {
     setDeptIssuesLoading(true);
     try {
@@ -325,6 +329,27 @@ export default function AdminDashboard() {
     }
   };
 
+  // --- NEW: Escalation Execution ---
+  const executeEscalationRuling = async () => {
+    if (!escalationIssue || !escalationAction || !escalationNote.trim()) {
+      alert("Please provide an official ruling note.");
+      return;
+    }
+
+    const formattedNote = `[ADMIN OVERRIDE]: ${escalationNote}`;
+
+    await updateIssueStatus(
+      escalationIssue.id,
+      escalationAction,
+      formattedNote,
+    );
+
+    // Reset state
+    setEscalationIssue(null);
+    setEscalationAction(null);
+    setEscalationNote("");
+  };
+
   const createAnnouncement = async () => {
     try {
       const res = await fetch("/api/admin/announcements", {
@@ -348,13 +373,12 @@ export default function AdminDashboard() {
     }
   };
 
-  // New fetch functions
   const fetchUsers = async () => {
     setUsersLoading(true);
     try {
       const params = new URLSearchParams();
       if (userRoleFilter !== "all") params.set("role", userRoleFilter);
-      if (userSearch) params.set("search", userSearch); // Add this line
+      if (userSearch) params.set("search", userSearch);
 
       const res = await fetch(`/api/admin/users?${params}`);
       if (res.ok) {
@@ -372,7 +396,7 @@ export default function AdminDashboard() {
     if (activeTab === "users") {
       const timer = setTimeout(() => {
         fetchUsers();
-      }, 500); // 500ms delay to stop flickering while typing
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [userSearch, userRoleFilter, activeTab]);
@@ -856,10 +880,10 @@ export default function AdminDashboard() {
                                 issue.status === "active"
                                   ? "bg-red-100 text-red-800"
                                   : issue.status === "under_progress"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : issue.status === "under_review"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-green-100 text-green-800"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : issue.status === "under_review"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : "bg-green-100 text-green-800"
                               }
                             >
                               {issue.status.replace("_", " ")}
@@ -885,8 +909,6 @@ export default function AdminDashboard() {
                   <CardContent>
                     <p className="text-sm mb-3">{issue.description}</p>
 
-                    {/* Replace the existing assignment check with this logic */}
-                    {/* UPDATED SECTION START */}
                     {issue.department || issue.assignment ? (
                       <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
                         <div className="flex items-center justify-between">
@@ -910,14 +932,12 @@ export default function AdminDashboard() {
                                 </span>
                                 <UnassignButton
                                   issueId={issue.id}
-                                  onUnassign={fetchIssues} // Pass your refresh function here
+                                  onUnassign={fetchIssues}
                                 />
                               </>
                             )}
                           </div>
 
-                          {/* DISPATCHER MODAL INSERTION POINT */}
-                          {/* If we have a department (and ID), but NO assignee yet, show the button */}
                           {issue.department?.id &&
                             !issue.assignment?.assignee && (
                               <DispatcherModal
@@ -925,7 +945,6 @@ export default function AdminDashboard() {
                                 departmentId={issue.department.id}
                                 lat={issue.latitude}
                                 lng={issue.longitude}
-                                // digipin={issue.digipin}
                                 departmentName={issue.department.name}
                                 onAssign={fetchIssues}
                               />
@@ -944,10 +963,9 @@ export default function AdminDashboard() {
                           <AlertCircle className="h-3 w-3" />
                           Unassigned - Needs routing
                         </div>
-                        {/* Optional: You can put a 'Route' button here later to set the department */}
                       </div>
                     )}
-                    {/* UPDATED SECTION END */}
+
                     <div className="flex gap-4 mt-2 mb-4">
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <TrendingUp className="h-3 w-3" />
@@ -998,6 +1016,46 @@ export default function AdminDashboard() {
                         Manage
                       </Button>
                     </div>
+
+                    {/* --- ADMIN INTERVENTION ACTIONS --- */}
+                    {issue.status === "under_review" && (
+                      <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg w-full">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Shield className="h-5 w-5 text-red-500" />
+                          <h4 className="font-bold text-red-600 dark:text-red-400">
+                            Admin Intervention Required
+                          </h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          This issue has been escalated via Citizen Appeal or
+                          Official Roadblock. Make a final ruling.
+                        </p>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                              setEscalationIssue(issue);
+                              setEscalationAction("closed");
+                            }}
+                          >
+                            Close Issue
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 border-red-500 text-red-500 hover:bg-red-500/10"
+                            onClick={() => {
+                              setEscalationIssue(issue);
+                              setEscalationAction("under_progress");
+                            }}
+                          >
+                            Force Progress
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))
@@ -1141,8 +1199,8 @@ export default function AdminDashboard() {
                             announcement.priority === "urgent"
                               ? "destructive"
                               : announcement.priority === "high"
-                              ? "default"
-                              : "secondary"
+                                ? "default"
+                                : "secondary"
                           }
                         >
                           {announcement.priority}
@@ -1162,20 +1220,18 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
       {/* Users Management Tab */}
       {activeTab === "users" && (
         <div className="space-y-6 w-full">
           {/* User Filters & Search */}
           <Card>
             <CardHeader>
-              {/* <CardTitle>User Management</CardTitle> */}
               <CardDescription>
                 Monitor workload and manage user roles
               </CardDescription>
               <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">User Management</h1>
-
-                {/* The new secure button */}
                 <AddOfficialModal onOfficialAdded={fetchUsers} />
               </div>
             </CardHeader>
@@ -1249,7 +1305,6 @@ export default function AdminDashboard() {
                           <CardTitle className="text-base">
                             {user.display_name || "Unknown User"}
                           </CardTitle>
-                          {/* Intelligent Status Badge */}
                           <Badge
                             variant="outline"
                             className={`
@@ -1370,8 +1425,8 @@ export default function AdminDashboard() {
                             isOpen={isEditUserOpen}
                             onClose={() => setIsEditUserOpen(false)}
                             user={editingUser}
-                            departments={departments} // You already have this in your state
-                            onUpdate={fetchUsers} // Reuse your existing fetchUsers function
+                            departments={departments}
+                            onUpdate={fetchUsers}
                           />
                         </div>
                       </div>
@@ -1512,7 +1567,6 @@ export default function AdminDashboard() {
                           <div className="flex flex-col items-end gap-1">
                             <div className="flex items-center gap-2 text-xs font-semibold text-blue-300">
                               <UserCheck className="h-3 w-3" />
-                              {/* Shows the official assigned from the profiles table */}
                               {issue.assignment?.assignee?.display_name ||
                                 "Official Unassigned"}
                             </div>
@@ -1597,6 +1651,71 @@ export default function AdminDashboard() {
               ))
             )}
           </div>
+        </div>
+      )}
+
+      {/* --- ESCALATION RULING MODAL --- */}
+      {escalationIssue && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <Card className="w-full max-w-md border-red-500/50 shadow-2xl shadow-red-900/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-red-500">
+                <Shield className="h-5 w-5" />
+                Confirm Final Ruling
+              </CardTitle>
+              <CardDescription>
+                You are about to globally override Issue #{escalationIssue.id}{" "}
+                to{" "}
+                <Badge variant="outline" className="uppercase ml-1">
+                  {escalationAction?.replace("_", " ")}
+                </Badge>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>
+                  Official Ruling / Justification{" "}
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  placeholder="e.g., Roadblock approved, budget allocated for next month. OR Citizen appeal denied, repair meets city standards..."
+                  value={escalationNote}
+                  onChange={(e) => setEscalationNote(e.target.value)}
+                  rows={4}
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setEscalationIssue(null);
+                    setEscalationNote("");
+                  }}
+                  disabled={statusUpdateLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={executeEscalationRuling}
+                  disabled={
+                    statusUpdateLoading || escalationNote.trim().length < 5
+                  }
+                >
+                  {statusUpdateLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />{" "}
+                      Executing...
+                    </>
+                  ) : (
+                    "Execute Ruling"
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
