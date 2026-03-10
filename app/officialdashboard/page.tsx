@@ -27,7 +27,6 @@ export default async function OfficialDashboardPage() {
     redirect("/");
   }
 
-  // Also passing the isOfficial prop to Navigation so the dashboard link shows up!
   const isOfficial = profile?.role === "official" || profile?.role === "admin";
 
   return (
