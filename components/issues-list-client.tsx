@@ -32,6 +32,7 @@ type Issue = {
   created_at: string;
   latitude: number;
   longitude: number;
+  user_has_voted?: boolean;
   vote_count?: number | { count: number };
 };
 
@@ -435,8 +436,9 @@ export default function IssuesListClient({
                   issue={normalizedIssue}
                   onUpvote={handleUpvote}
                   showDistance={distance}
-                  currentUserEmail={currentUserEmail} // PASSED DOWN HERE
-                  currentUserId={currentUserId} // PASSED DOWN HERE
+                  currentUserEmail={currentUserEmail}
+                  currentUserId={currentUserId}
+                  initialHasUpvoted={issue.user_has_voted || false}
                 />
               );
             })}
