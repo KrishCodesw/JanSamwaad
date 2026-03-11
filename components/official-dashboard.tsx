@@ -13,10 +13,12 @@ import {
   Loader2,
   Briefcase,
   CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 
 export default function OfficialDashboard() {
   const [pendingIssues, setPendingIssues] = useState<any[]>([]);
+  const [appealedIssues, setAppealedIssues] = useState<any[]>([]); // <-- NEW STATE
   const [resolvedIssues, setResolvedIssues] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +28,6 @@ export default function OfficialDashboard() {
       setLoading(true);
       setError(null);
 
-      // Fetch both pending and resolved issues simultaneously
       const [pendingRes, resolvedRes] = await Promise.all([
         fetch(`/api/issues/assigned?status=pending`),
         fetch(`/api/issues/assigned?status=resolved`),
@@ -39,7 +40,20 @@ export default function OfficialDashboard() {
       const pendingData = await pendingRes.json();
       const resolvedData = await resolvedRes.json();
 
-      setPendingIssues(pendingData.data || []);
+      const allPending = pendingData.data || [];
+
+      // --- NEW: SPLIT PENDING AND APPEALED ---
+      // This checks if the backend returned an appeal_count > 0 or an 'appealed' status
+      const appealed = allPending.filter(
+        (issue: any) => issue.appeal_count > 0 || issue.status === "appealed",
+      );
+      const regularPending = allPending.filter(
+        (issue: any) =>
+          !(issue.appeal_count > 0) && issue.status !== "appealed",
+      );
+
+      setPendingIssues(regularPending);
+      setAppealedIssues(appealed);
       setResolvedIssues(resolvedData.data || []);
     } catch (error) {
       console.error("Error fetching issues:", error);
@@ -97,14 +111,40 @@ export default function OfficialDashboard() {
       </CardHeader>
 
       <CardContent className="pt-6">
-        <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+        {/* Default to appealed tasks if they exist! */}
+        <Tabs
+          defaultValue={appealedIssues.length > 0 ? "appealed" : "pending"}
+          className="w-full"
+        >
+          {/* UPDATED TO 3 COLUMNS */}
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="pending">
               Pending Tasks
               <Badge variant="secondary" className="ml-2 bg-background">
                 {pendingIssues.length}
               </Badge>
             </TabsTrigger>
+
+            {/* --- NEW APPEALED TAB --- */}
+            <TabsTrigger
+              value="appealed"
+              className="data-[state=active]:text-red-600 dark:data-[state=active]:text-red-400"
+            >
+              Appealed Tasks
+              {appealedIssues.length > 0 ? (
+                <Badge
+                  variant="destructive"
+                  className="ml-2 bg-red-500 animate-pulse"
+                >
+                  {appealedIssues.length}
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="ml-2 bg-background">
+                  0
+                </Badge>
+              )}
+            </TabsTrigger>
+
             <TabsTrigger value="resolved">
               Resolved History
               <Badge variant="secondary" className="ml-2 bg-background">
@@ -119,10 +159,11 @@ export default function OfficialDashboard() {
             </div>
           ) : (
             <>
+              {/* PENDING TAB */}
               <TabsContent value="pending" className="mt-0">
                 {pendingIssues.length === 0 ? (
                   <div className="text-center py-12 border-2 border-dashed border-primary/20 rounded-lg text-muted-foreground">
-                    You currently have no assigned issues. Great job!
+                    You currently have no new assigned issues. Great job!
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
@@ -137,7 +178,28 @@ export default function OfficialDashboard() {
                 )}
               </TabsContent>
 
-              {/* RESOLVED TAB CONTENT */}
+              {/* --- NEW: APPEALED TAB CONTENT --- */}
+              <TabsContent value="appealed" className="mt-0">
+                {appealedIssues.length === 0 ? (
+                  <div className="text-center py-12 border-2 border-dashed border-green-500/20 rounded-lg text-muted-foreground">
+                    <CheckCircle2 className="mx-auto h-8 w-8 text-green-500/50 mb-3" />
+                    Zero active appeals! Your repairs are passing citizen
+                    inspection.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                    {appealedIssues.map((issue) => (
+                      <OfficialIssueCard
+                        key={issue.id}
+                        issue={issue}
+                        onResolved={fetchIssues}
+                      />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* RESOLVED TAB */}
               <TabsContent value="resolved" className="mt-0">
                 {resolvedIssues.length === 0 ? (
                   <div className="text-center py-12 border-2 border-dashed border-primary/20 rounded-lg text-muted-foreground">
@@ -146,7 +208,6 @@ export default function OfficialDashboard() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                    {/* 2. Map using the new ResolvedIssueCard */}
                     {resolvedIssues.map((issue) => (
                       <ResolvedIssueCard key={issue.id} issue={issue} />
                     ))}

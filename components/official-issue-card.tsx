@@ -31,6 +31,7 @@ import {
   Camera,
   Upload,
   AlertOctagon,
+  AlertTriangle,
 } from "lucide-react";
 
 import { encode } from "@pranamphd/digipin";
@@ -329,7 +330,27 @@ export function OfficialIssueCard({
 
   return (
     <>
-      <Card className="relative overflow-hidden flex flex-col h-cover dark:bg-black dark:border-gray-700">
+      <Card
+        className={`relative overflow-hidden flex flex-col h-full dark:bg-black dark:border-gray-700 transition-all ${
+          issue.appeal_count > 0
+            ? "border-red-500 shadow-sm shadow-red-900/20"
+            : ""
+        }`}
+      >
+        {/* --- RED APPEAL BANNER --- */}
+        {issue.appeal_count > 0 && (
+          <div className="bg-red-500/10 border-b border-red-500/20 px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-semibold text-sm">
+              <AlertTriangle className="h-4 w-4" />
+              Citizen Rejected Repair
+            </div>
+            <Badge variant="destructive" className="bg-red-600">
+              {issue.appeal_count}{" "}
+              {issue.appeal_count === 1 ? "Appeal" : "Appeals"}
+            </Badge>
+          </div>
+        )}
+
         <div className="flex flex-col flex-grow">
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
@@ -412,7 +433,7 @@ export function OfficialIssueCard({
                 </Button>
                 <Button
                   variant="destructive"
-                  className="flex-1 gap-2 bg-red-700 hover:bg-red-800 text-white"
+                  className="flex-1 gap-2 bg-red-600 hover:bg-red-700 text-white"
                   onClick={() => setIsRoadblockModalOpen(true)}
                 >
                   <AlertOctagon className="h-4 w-4" /> Escalate
@@ -483,11 +504,11 @@ export function OfficialIssueCard({
                   </label>
                   <div className="border border-input bg-background rounded-md p-3">
                     {capturedImage ? (
-                      <div className="relative">
+                      <div className="relative w-full h-48 rounded-md overflow-hidden bg-black">
                         <img
                           src={capturedImage}
                           alt="Proof of Work"
-                          className="w-full h-32 object-cover rounded-md"
+                          className="w-full h-full object-cover"
                         />
                         <Button
                           type="button"
@@ -501,15 +522,21 @@ export function OfficialIssueCard({
                       </div>
                     ) : (
                       <div className="text-center space-y-3">
-                        <video
-                          ref={videoRef}
-                          autoPlay
-                          playsInline
-                          muted
-                          className={`w-full h-32 object-cover rounded-md bg-black ${
-                            cameraActive ? "block" : "hidden"
-                          } ${!isBackCamera ? "scale-x-[-1]" : ""}`}
-                        />
+                        <div
+                          className={`relative w-full overflow-hidden rounded-md bg-black transition-all duration-300 ${
+                            cameraActive ? "h-48 sm:h-64" : "h-0"
+                          }`}
+                        >
+                          <video
+                            ref={videoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className={`absolute inset-0 w-full h-full object-cover ${
+                              !isBackCamera ? "scale-x-[-1]" : ""
+                            }`}
+                          />
+                        </div>
 
                         {cameraActive ? (
                           <div className="flex gap-2 justify-center">
@@ -604,6 +631,40 @@ export function OfficialIssueCard({
             )}
           </CardFooter>
         </div>
+
+        {/* --- FIXED OVERLAY SECTION (Moved INSIDE the Card) --- */}
+        {issue.images && issue.images.length > 0 && (
+          <div
+            className={`absolute inset-0 z-20 bg-background/95 backdrop-blur-sm transition-transform duration-300 ease-in-out ${
+              showImageOverlay ? "translate-y-0" : "translate-y-full"
+            }`}
+            onClick={() => setShowImageOverlay(false)}
+          >
+            <div className="absolute top-3 right-3 z-30">
+              <Button
+                variant="secondary"
+                size="icon"
+                className="h-8 w-8 rounded-full shadow-md bg-white/80 hover:bg-white dark:bg-black/50 dark:hover:bg-black/80"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowImageOverlay(false);
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="relative w-full h-full cursor-pointer">
+              <Image
+                src={issue.images[0].url || issue.images[0]}
+                alt="Issue evidence"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
+          </div>
+        )}
+        {/* --------------------------------------------------- */}
       </Card>
 
       <Dialog
@@ -651,38 +712,6 @@ export function OfficialIssueCard({
           </div>
         </DialogContent>
       </Dialog>
-
-      {issue.images && issue.images.length > 0 && (
-        <div
-          className={`absolute inset-0 z-20 bg-background/95 backdrop-blur-sm transition-transform duration-300 ease-in-out ${
-            showImageOverlay ? "translate-y-0" : "translate-y-full"
-          }`}
-          onClick={() => setShowImageOverlay(false)}
-        >
-          <div className="absolute top-3 right-3 z-30">
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-8 w-8 rounded-full shadow-md bg-white/80 hover:bg-white dark:bg-black/50 dark:hover:bg-black/80"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowImageOverlay(false);
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="relative w-full h-full cursor-pointer">
-            <Image
-              src={issue.images[0].url || issue.images[0]}
-              alt="Issue evidence"
-              fill
-              className="object-contain"
-              priority
-            />
-          </div>
-        </div>
-      )}
 
       <canvas ref={canvasRef} style={{ display: "none" }} />
     </>
