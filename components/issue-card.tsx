@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   ThumbsUp,
   MapPin,
   Clock,
@@ -13,7 +19,6 @@ import {
   Eye,
   User,
   Loader2,
-  X,
   AlertCircle,
   AlertTriangle,
 } from "lucide-react";
@@ -41,12 +46,11 @@ type Issue = {
   longitude?: number;
   vote_count?: number;
   status_changes?: StatusChange[];
-  // --- NEW: Added so we can check ownership ---
   reporter_email?: string;
   reporter_id?: string;
+  proof_of_work?: { image_url: string; notes: string | null }[];
 };
 
-// ... (STATUS_COLORS and CATEGORY_COLORS remain exactly the same) ...
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400",
   under_progress:
@@ -72,9 +76,9 @@ export function IssueCard({
   issue,
   onUpvote,
   showDistance,
-  currentUserEmail, // --- NEW PROP: Pass this from the parent list ---
-  currentUserId, // --- NEW PROP: Pass this from the parent list ---
-  initialHasUpvoted = false, // --- NEW PROP: So we know if they upvoted before this session
+  currentUserEmail,
+  currentUserId,
+  initialHasUpvoted = false,
 }: {
   issue: Issue;
   onUpvote?: (id: number) => Promise<void>;
@@ -94,26 +98,23 @@ export function IssueCard({
   const latestStatusChange = getLatestStatusChange(issue);
   const [upvoting, setUpvoting] = useState(false);
   const [hasUpvoted, setHasUpvoted] = useState(initialHasUpvoted);
-  const [showImage, setShowImage] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [voteCount, setVoteCount] = useState(issue.vote_count || 0);
-  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false); // <-- NEW
+  const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
 
   const [fetchedImages, setFetchedImages] = useState<{ url: string }[] | null>(
     null,
   );
   const [loadingImages, setLoadingImages] = useState(false);
 
-  // --- NEW: THE VISIBILITY LOGIC ---
-  // Is this user the original reporter?
   const isReporter = !!(
     (currentUserEmail &&
       issue.reporter_email &&
       currentUserEmail.toLowerCase() === issue.reporter_email.toLowerCase()) ||
     (currentUserId && issue.reporter_id && currentUserId === issue.reporter_id)
   );
-  // Do they have the right to verify?
+
   const canVerify = isReporter || hasUpvoted;
-  // ---------------------------------
 
   useEffect(() => {
     setHasUpvoted(initialHasUpvoted);
@@ -135,7 +136,7 @@ export function IssueCard({
   };
 
   const handleViewImages = async () => {
-    setShowImage(true);
+    setShowImageModal(true);
     if (fetchedImages === null) {
       setLoadingImages(true);
       try {
@@ -185,7 +186,7 @@ export function IssueCard({
                   {issue.flagged && (
                     <Flag className="h-4 w-4 text-red-500 dark:text-red-400" />
                   )}
-                  {showDistance && (
+                  {showDistance !== undefined && (
                     <span className="text-xs text-muted-foreground dark:text-gray-400 flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
                       {showDistance.toFixed(1)}km away
@@ -249,7 +250,6 @@ export function IssueCard({
               {issue.description}
             </p>
 
-            {/* --- NEW UI: Sleek Verification Banner --- */}
             {issue.status === "closed" && canVerify && (
               <div className="mt-4 p-3 bg-red-50/50 border border-red-100 dark:bg-red-950/20 dark:border-red-900/30 rounded-lg flex flex-col gap-3 w-full">
                 <div className="flex items-center gap-2 text-sm">
@@ -271,7 +271,7 @@ export function IssueCard({
                 </Button>
               </div>
             )}
-            {/* ----------------------------------------- */}
+
             <div className="mt-auto pt-4 space-y-2">
               {latestStatusChange && (
                 <div className="bg-muted/50 dark:bg-gray-800 p-2 rounded-md text-xs dark:text-gray-400">
@@ -300,58 +300,90 @@ export function IssueCard({
             </div>
           </CardContent>
         </div>
+      </Card>
 
-        {/* --- Overlay Section (Unchanged) --- */}
-        <div
-          className={`absolute inset-0 z-20 bg-background/95 backdrop-blur-sm transition-transform duration-300 ease-in-out ${
-            showImage ? "translate-y-0" : "translate-y-full"
-          }`}
-          onClick={() => setShowImage(false)}
-        >
-          <div className="absolute top-3 right-3 z-30">
-            <Button
-              variant="secondary"
-              size="icon"
-              className="h-8 w-8 rounded-full shadow-md bg-white/80 hover:bg-white dark:bg-black/50 dark:hover:bg-black/80"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowImage(false);
-              }}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+      {/* --- PROPER BEFORE & AFTER MODAL --- */}
+      <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+        <DialogContent className="max-w-5xl h-[85vh] md:h-[75vh] flex flex-col p-0 overflow-hidden bg-black/95 border-gray-800 shadow-2xl">
+          <DialogHeader className="p-4 pb-0 z-10 bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full">
+            <DialogTitle className="text-white drop-shadow-md flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Issue Evidence
+            </DialogTitle>
+          </DialogHeader>
 
-          <div className="relative w-full h-full flex flex-col items-center justify-center p-4">
+          <div className="flex-1 w-full h-full flex flex-col md:flex-row p-4 pt-16 gap-4 overflow-y-auto">
             {loadingImages ? (
-              <div className="flex flex-col items-center text-muted-foreground gap-2">
+              <div className="flex flex-col items-center justify-center w-full h-full text-muted-foreground gap-2">
                 <Loader2 className="h-8 w-8 animate-spin" />
-                <p className="text-sm">Loading image...</p>
+                <p className="text-sm">Loading evidence...</p>
               </div>
-            ) : fetchedImages && fetchedImages.length > 0 ? (
-              <>
-                <Image
-                  src={fetchedImages[0].url}
-                  alt="Issue evidence"
-                  fill
-                  className="object-contain"
-                  priority
-                />
-              </>
             ) : (
-              fetchedImages !== null && (
-                <p className="text-muted-foreground text-sm font-medium">
-                  No images provided for this issue.
-                </p>
-              )
+              <>
+                {/* LEFT SIDE: BEFORE (Original Report) */}
+                {fetchedImages && fetchedImages.length > 0 && (
+                  <div className="relative w-full min-h-[40vh] md:h-full flex-1 border border-white/10 rounded-xl overflow-hidden bg-black/50">
+                    <Badge className="absolute top-3 left-3 z-10 bg-black/80 text-white border-white/20 backdrop-blur-md">
+                      Before (Reported)
+                    </Badge>
+                    <Image
+                      src={fetchedImages[0].url}
+                      alt="Original Issue evidence"
+                      fill
+                      className="object-contain"
+                      priority
+                    />
+                  </div>
+                )}
+
+                {/* RIGHT SIDE: AFTER (Official Proof of Work) */}
+                {issue.proof_of_work && issue.proof_of_work.length > 0 && (
+                  <div className="relative w-full min-h-[40vh] md:h-full flex-1 border-2 border-green-500/50 rounded-xl overflow-hidden bg-black/50 shadow-[0_0_30px_-10px_rgba(34,197,94,0.3)]">
+                    <Badge className="absolute top-3 left-3 z-10 bg-green-600 text-white border-green-400 shadow-lg">
+                      After (Repaired)
+                    </Badge>
+                    <Image
+                      src={issue.proof_of_work[0].image_url}
+                      alt="Official Repair Proof"
+                      fill
+                      className="object-contain"
+                      priority
+                    />
+                    {issue.proof_of_work[0].notes && (
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6 pt-16">
+                        <p className="text-sm text-white">
+                          <span className="font-bold text-green-400">
+                            Official Notes:{" "}
+                          </span>
+                          {issue.proof_of_work[0].notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Fallback if nothing loads */}
+                {fetchedImages !== null &&
+                  fetchedImages.length === 0 &&
+                  (!issue.proof_of_work ||
+                    issue.proof_of_work.length === 0) && (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <p className="text-muted-foreground text-sm font-medium">
+                        No images available for this issue.
+                      </p>
+                    </div>
+                  )}
+              </>
             )}
           </div>
-        </div>
-      </Card>
+        </DialogContent>
+      </Dialog>
+      {/* ----------------------------------- */}
+
       <CitizenVerificationModal
         issueId={issue.id}
-        issueLat={issue.latitude || 0} // <-- ADD THIS
-        issueLng={issue.longitude || 0} // <-- ADD THIS
+        issueLat={issue.latitude || 0}
+        issueLng={issue.longitude || 0}
         isOpen={isVerifyModalOpen}
         onClose={() => setIsVerifyModalOpen(false)}
         onSuccess={() => {

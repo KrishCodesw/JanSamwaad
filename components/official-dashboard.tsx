@@ -28,28 +28,30 @@ export default function OfficialDashboard() {
       setLoading(true);
       setError(null);
 
-      const [pendingRes, resolvedRes] = await Promise.all([
-        fetch(`/api/issues/assigned?status=pending`),
+      const [assignedRes, resolvedRes] = await Promise.all([
+        fetch(`/api/issues/assigned`),
         fetch(`/api/issues/assigned?status=resolved`),
       ]);
 
-      if (!pendingRes.ok || !resolvedRes.ok) {
+      if (!assignedRes.ok || !resolvedRes.ok) {
         throw new Error("Failed to fetch issues");
       }
 
-      const pendingData = await pendingRes.json();
+      const assignedData = await assignedRes.json();
       const resolvedData = await resolvedRes.json();
 
-      const allPending = pendingData.data || [];
+      const allAssigned = assignedData.data || [];
 
-      // --- NEW: SPLIT PENDING AND APPEALED ---
-      // This checks if the backend returned an appeal_count > 0 or an 'appealed' status
-      const appealed = allPending.filter(
-        (issue: any) => issue.appeal_count > 0 || issue.status === "appealed",
+      // --- THE FIX: Filter accurately based on DB statuses ---
+      // 'under_review' means it was appealed or escalated
+      const appealed = allAssigned.filter(
+        (issue: any) => issue.status === "under_review",
       );
-      const regularPending = allPending.filter(
+
+      // Normal tasks are just active or being worked on
+      const regularPending = allAssigned.filter(
         (issue: any) =>
-          !(issue.appeal_count > 0) && issue.status !== "appealed",
+          issue.status === "active" || issue.status === "under_progress",
       );
 
       setPendingIssues(regularPending);

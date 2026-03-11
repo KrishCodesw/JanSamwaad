@@ -22,7 +22,7 @@ export async function GET(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
 
     // 3. QUERY THE DATABASE
-    let query = supabase.from('issues').select('*');
+    let query = supabase.from('issues').select('*,proof_of_work(*)');
 
     // Filters
     if (status && status !== 'all') {
