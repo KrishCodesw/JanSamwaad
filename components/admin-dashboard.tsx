@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image"; // <-- Added Image import
 import {
   Card,
   CardContent,
@@ -18,6 +19,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog, // <-- Added Dialog imports
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { Textarea } from "@/components/ui/textarea";
 import DispatcherModal from "@/components/dispatcherModal";
@@ -101,6 +109,8 @@ type Issue = {
     assignee: { display_name: string };
     notes: string;
   };
+  // --- NEW: Added proof_of_work ---
+  proof_of_work?: { image_url: string; notes: string | null }[];
 };
 
 type User = {
@@ -218,12 +228,19 @@ export default function AdminDashboard() {
     priority: "normal",
   });
 
-  // --- NEW: Escalation Review States ---
+  // --- Escalation Review States ---
   const [escalationIssue, setEscalationIssue] = useState<Issue | null>(null);
   const [escalationAction, setEscalationAction] = useState<
     "closed" | "under_progress" | null
   >(null);
   const [escalationNote, setEscalationNote] = useState("");
+
+  // --- NEW: Admin Image Modal States ---
+  const [imageModalIssue, setImageModalIssue] = useState<Issue | null>(null);
+  const [fetchedImages, setFetchedImages] = useState<{ url: string }[] | null>(
+    null,
+  );
+  const [loadingImages, setLoadingImages] = useState(false);
 
   const handleEditUserClick = (user: User) => {
     setEditingUser(user);
@@ -329,7 +346,7 @@ export default function AdminDashboard() {
     }
   };
 
-  // --- NEW: Escalation Execution ---
+  // --- Escalation Execution ---
   const executeEscalationRuling = async () => {
     if (!escalationIssue || !escalationAction || !escalationNote.trim()) {
       alert("Please provide an official ruling note.");
@@ -348,6 +365,23 @@ export default function AdminDashboard() {
     setEscalationIssue(null);
     setEscalationAction(null);
     setEscalationNote("");
+  };
+
+  // --- NEW: Fetch images for Modal ---
+  const handleViewImages = async (issue: Issue) => {
+    setImageModalIssue(issue);
+    setFetchedImages(null);
+    setLoadingImages(true);
+    try {
+      const res = await fetch(`/api/issues/${issue.id}/images`);
+      const data = await res.json();
+      setFetchedImages(data);
+    } catch (error) {
+      console.error("Failed to fetch images", error);
+      setFetchedImages([]);
+    } finally {
+      setLoadingImages(false);
+    }
   };
 
   const createAnnouncement = async () => {
@@ -1007,6 +1041,16 @@ export default function AdminDashboard() {
                         </SelectContent>
                       </Select>
 
+                      {/* --- NEW: View Images Button --- */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewImages(issue)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Images
+                      </Button>
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -1558,6 +1602,15 @@ export default function AdminDashboard() {
                               >
                                 {issue.status}
                               </Badge>
+                              {/* --- NEW: View Images Button (Dept view) --- */}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 ml-2"
+                                onClick={() => handleViewImages(issue)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             </div>
                             <p className="text-sm text-muted-foreground line-clamp-1">
                               {issue.description}
@@ -1718,6 +1771,87 @@ export default function AdminDashboard() {
           </Card>
         </div>
       )}
+
+      {/* --- NEW: ADMIN IMAGE VIEWER MODAL --- */}
+      <Dialog
+        open={!!imageModalIssue}
+        onOpenChange={(open) => !open && setImageModalIssue(null)}
+      >
+        <DialogContent className="max-w-5xl h-[85vh] md:h-[75vh] flex flex-col p-0 overflow-hidden bg-black/95 border-gray-800 shadow-2xl">
+          <DialogHeader className="p-4 pb-0  bg-gradient-to-b from-black/80 to-transparent  top-0 w-full">
+            <DialogTitle className="text-white drop-shadow-md flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Issue #{imageModalIssue?.id} Evidence
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex-1 w-full h-full flex flex-col md:flex-row p-4 pt-16 gap-4 overflow-y-auto">
+            {loadingImages ? (
+              <div className="flex flex-col items-center justify-center w-full h-full text-muted-foreground gap-2">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <p className="text-sm">Loading evidence...</p>
+              </div>
+            ) : (
+              <>
+                {/* LEFT SIDE: BEFORE (Original Report) */}
+                {fetchedImages && fetchedImages.length > 0 && (
+                  <div className="relative w-full min-h-[40vh] md:h-full flex-1 border border-white/10 rounded-xl overflow-hidden bg-black/50">
+                    <Badge className="absolute top-3 left-3 z-10 bg-black/80 text-white border-white/20 backdrop-blur-md">
+                      Before (Reported)
+                    </Badge>
+                    <Image
+                      src={fetchedImages[0].url}
+                      alt="Original Issue evidence"
+                      fill
+                      className="object-contain"
+                      priority
+                    />
+                  </div>
+                )}
+
+                {/* RIGHT SIDE: AFTER (Official Proof of Work) */}
+                {imageModalIssue?.proof_of_work &&
+                  imageModalIssue.proof_of_work.length > 0 && (
+                    <div className="relative w-full min-h-[40vh] md:h-full flex-1 border-2 border-green-500/50 rounded-xl overflow-hidden bg-black/50 shadow-[0_0_30px_-10px_rgba(34,197,94,0.3)]">
+                      <Badge className="absolute top-3 left-3 z-10 bg-green-600 text-white border-green-400 shadow-lg">
+                        After (Repaired / Roadblock)
+                      </Badge>
+                      <Image
+                        src={imageModalIssue.proof_of_work[0].image_url}
+                        alt="Official Repair Proof"
+                        fill
+                        className="object-contain"
+                        priority
+                      />
+                      {imageModalIssue.proof_of_work[0].notes && (
+                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6 pt-16">
+                          <p className="text-sm text-white">
+                            <span className="font-bold text-green-400">
+                              Official Notes:{" "}
+                            </span>
+                            {imageModalIssue.proof_of_work[0].notes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                {/* Fallback if nothing loads */}
+                {fetchedImages !== null &&
+                  fetchedImages.length === 0 &&
+                  (!imageModalIssue?.proof_of_work ||
+                    imageModalIssue.proof_of_work.length === 0) && (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <p className="text-muted-foreground text-sm font-medium">
+                        No images available for this issue.
+                      </p>
+                    </div>
+                  )}
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -25,7 +25,7 @@ export async function PUT(
 
       if (deleteError) throw deleteError;
 
-      // 2. Revert issue status to 'active' (so it appears in open lists again)
+      
       await supabase
         .from('issues')
         .update({ status: 'active' })
@@ -34,16 +34,12 @@ export async function PUT(
       return NextResponse.json({ message: "Unassigned successfully" });
     }
 
-    // ---------------------------------------------------------
-    // SCENARIO 2: ASSIGN (assignee_id is present)
-    // ---------------------------------------------------------
-    
-    // Validation: If it's not null and not present, it's invalid
+
     if (!assignee_id) {
        return NextResponse.json({ error: "Assignee ID is required" }, { status: 400 });
     }
 
-    // 1. Fetch Department ID (Required for your DB Constraint)
+ 
     const { data: issue, error: fetchError } = await supabase
       .from('issues')
       .select('department_id')

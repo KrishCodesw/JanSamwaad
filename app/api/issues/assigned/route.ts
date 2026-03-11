@@ -22,7 +22,9 @@ export async function GET(request: Request) {
         *,
         assignments!inner(*),
         images:issue_images(url),
-        proof_of_work(image_url, notes),
+      
+        proof_of_work(*),
+        
         status_changes:status_history(
           from_status,
           to_status,

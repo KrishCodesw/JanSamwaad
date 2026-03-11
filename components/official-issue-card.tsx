@@ -384,7 +384,9 @@ export function OfficialIssueCard({
                   ))}
                 </div>
               </div>
-              {issue.images && issue.images.length > 0 && (
+              {/* EYE ICON TO OPEN MODAL */}
+              {(issue.images?.length > 0 ||
+                issue.proof_of_work?.length > 0) && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -631,40 +633,6 @@ export function OfficialIssueCard({
             )}
           </CardFooter>
         </div>
-
-        {/* --- FIXED OVERLAY SECTION (Moved INSIDE the Card) --- */}
-        {issue.images && issue.images.length > 0 && (
-          <div
-            className={`absolute inset-0 z-20 bg-background/95 backdrop-blur-sm transition-transform duration-300 ease-in-out ${
-              showImageOverlay ? "translate-y-0" : "translate-y-full"
-            }`}
-            onClick={() => setShowImageOverlay(false)}
-          >
-            <div className="absolute top-3 right-3 z-30">
-              <Button
-                variant="secondary"
-                size="icon"
-                className="h-8 w-8 rounded-full shadow-md bg-white/80 hover:bg-white dark:bg-black/50 dark:hover:bg-black/80"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowImageOverlay(false);
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="relative w-full h-full cursor-pointer">
-              <Image
-                src={issue.images[0].url || issue.images[0]}
-                alt="Issue evidence"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-          </div>
-        )}
-        {/* --------------------------------------------------- */}
       </Card>
 
       <Dialog
@@ -709,6 +677,71 @@ export function OfficialIssueCard({
                 "Escalate to Admin"
               )}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- PROPER BEFORE & AFTER MODAL (FIXED CLOSE BUTTON) --- */}
+      <Dialog open={showImageOverlay} onOpenChange={setShowImageOverlay}>
+        <DialogContent className="max-w-5xl h-[85vh] md:h-[75vh] flex flex-col p-0 overflow-hidden bg-[#0a0a0a] border-gray-800 shadow-2xl">
+          <DialogHeader className="p-5 border-b border-white/10 bg-black/60">
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Eye className="h-5 w-5 text-blue-400" />
+              Issue Evidence
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex-1 w-full h-full flex flex-col md:flex-row p-6 gap-6 overflow-y-auto">
+            {/* LEFT SIDE: BEFORE */}
+            {issue.images && issue.images.length > 0 && (
+              <div className="relative w-full min-h-[40vh] md:h-full flex-1 border border-white/10 rounded-xl overflow-hidden bg-black/50">
+                <Badge className="absolute top-3 left-3 z-10 bg-black/80 text-white border-white/20 backdrop-blur-md">
+                  Before (Reported)
+                </Badge>
+                <Image
+                  src={issue.images[0].url || issue.images[0]}
+                  alt="Original Issue evidence"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            )}
+
+            {/* RIGHT SIDE: AFTER */}
+            {issue.proof_of_work && issue.proof_of_work.length > 0 && (
+              <div className="relative w-full min-h-[40vh] md:h-full flex-1 border-2 border-green-500/50 rounded-xl overflow-hidden bg-black/50 shadow-[0_0_30px_-10px_rgba(34,197,94,0.3)]">
+                <Badge className="absolute top-3 left-3 z-10 bg-green-600 text-white border-green-400 shadow-lg">
+                  After (Repaired)
+                </Badge>
+                <Image
+                  src={issue.proof_of_work[0].image_url}
+                  alt="Official Repair Proof"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+                {issue.proof_of_work[0].notes && (
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/80 to-transparent p-6 pt-16">
+                    <p className="text-sm text-white">
+                      <span className="font-bold text-green-400">
+                        Official Notes:{" "}
+                      </span>
+                      {issue.proof_of_work[0].notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(!issue.images || issue.images.length === 0) &&
+              (!issue.proof_of_work || issue.proof_of_work.length === 0) && (
+                <div className="w-full h-full flex items-center justify-center">
+                  <p className="text-muted-foreground text-sm font-medium">
+                    No images available.
+                  </p>
+                </div>
+              )}
           </div>
         </DialogContent>
       </Dialog>

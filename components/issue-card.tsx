@@ -305,7 +305,7 @@ export function IssueCard({
       {/* --- PROPER BEFORE & AFTER MODAL --- */}
       <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
         <DialogContent className="max-w-5xl h-[85vh] md:h-[75vh] flex flex-col p-0 overflow-hidden bg-black/95 border-gray-800 shadow-2xl">
-          <DialogHeader className="p-4 pb-0 z-10 bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full">
+          <DialogHeader className="p-4 pb-0  bg-gradient-to-b from-black/80 to-transparent  top-0 w-full">
             <DialogTitle className="text-white drop-shadow-md flex items-center gap-2">
               <Eye className="h-5 w-5" />
               Issue Evidence

@@ -22,6 +22,7 @@ export async function GET(request: Request) {
       department:departments(id,name),
 
       vote_count:votes(count),
+      proof_of_work(*),
       assignment:assignments(
         notes,
         assignee:profiles!assignments_assignee_id_fkey(display_name)
