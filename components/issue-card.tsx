@@ -45,6 +45,7 @@ type Issue = {
   latitude?: number;
   longitude?: number;
   vote_count?: number;
+  updated_at?: string;
   status_changes?: StatusChange[];
   reporter_email?: string;
   reporter_id?: string;
@@ -114,7 +115,12 @@ export function IssueCard({
     (currentUserId && issue.reporter_id && currentUserId === issue.reporter_id)
   );
 
-  const canVerify = isReporter || hasUpvoted;
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+  const isExpired =
+    Date.now() - new Date(issue.updated_at || issue.created_at).getTime() >
+    SEVEN_DAYS_MS;
+
+  const canVerify = isReporter && issue.status === "closed" && !isExpired;
 
   useEffect(() => {
     setHasUpvoted(initialHasUpvoted);
