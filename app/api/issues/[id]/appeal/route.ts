@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 
 export async function POST(
   request: Request,
@@ -15,6 +16,11 @@ export async function POST(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    // Initialize Admin Client to bypass RLS
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     const { data: issue, error: fetchError } = await supabase
       .from("issues")
@@ -29,7 +35,6 @@ export async function POST(
     if (issue.status !== "closed") {
       return NextResponse.json({ error: "Only closed issues can be appealed." }, { status: 400 });
     }
-
     
     const updatedDate = new Date(issue.updated_at || new Date()).getTime();
     const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
@@ -42,8 +47,8 @@ export async function POST(
     }
     // ------------------------------------------------
 
-    // 2. UPDATE THE MAIN ISSUE TABLE
-    const { error: updateError } = await supabase
+    // 2. UPDATE THE MAIN ISSUE TABLE (Using supabaseAdmin!)
+    const { error: updateError } = await supabaseAdmin
       .from("issues")
       .update({ 
         status: "under_review",
@@ -56,8 +61,8 @@ export async function POST(
       throw new Error("Failed to update issue status");
     }
 
-    // 3. LOG THE HISTORY
-    const { error: historyError } = await supabase
+    // 3. LOG THE HISTORY (Using supabaseAdmin!)
+    const { error: historyError } = await supabaseAdmin
       .from("status_history")
       .insert({
         issue_id: parseInt(id),
