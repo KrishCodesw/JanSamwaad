@@ -108,6 +108,7 @@ export function IssueCard({
   );
   const [loadingImages, setLoadingImages] = useState(false);
 
+// 1. Check if user is the reporter
   const isReporter = !!(
     (currentUserEmail &&
       issue.reporter_email &&
@@ -115,12 +116,16 @@ export function IssueCard({
     (currentUserId && issue.reporter_id && currentUserId === issue.reporter_id)
   );
 
-  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-  const isExpired =
-    Date.now() - new Date(issue.updated_at || issue.created_at).getTime() >
-    SEVEN_DAYS_MS;
+  // 2. NEW: Combine reporter check WITH the upvote check
+  const isAuthorizedToAppeal = isReporter || hasUpvoted;
 
-  const canVerify = isReporter && issue.status === "closed" && !isExpired;
+  // 3. 7-Day Lock Math
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+  const lastUpdated = new Date(issue.updated_at || issue.created_at).getTime();
+  const isExpired = Date.now() - lastUpdated > SEVEN_DAYS_MS;
+
+  // 4. Final Verification check!
+  const canVerify = isAuthorizedToAppeal && issue.status === "closed" && !isExpired;
 
   useEffect(() => {
     setHasUpvoted(initialHasUpvoted);
