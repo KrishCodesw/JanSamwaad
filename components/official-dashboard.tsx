@@ -118,9 +118,12 @@ export default function OfficialDashboard() {
           defaultValue={appealedIssues.length > 0 ? "appealed" : "pending"}
           className="w-full"
         >
-          {/* UPDATED TO 3 COLUMNS */}
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="pending">
+          {/* UPDATED: Mobile-responsive scrollable tabs */}
+          <TabsList className="flex w-full h-auto overflow-x-auto justify-start md:grid md:grid-cols-3 mb-6 p-1 gap-2 md:gap-0 snap-x">
+            <TabsTrigger
+              value="pending"
+              className="whitespace-nowrap shrink-0 snap-start"
+            >
               Pending Tasks
               <Badge variant="secondary" className="ml-2 bg-background">
                 {pendingIssues.length}
@@ -130,7 +133,7 @@ export default function OfficialDashboard() {
             {/* --- NEW APPEALED TAB --- */}
             <TabsTrigger
               value="appealed"
-              className="data-[state=active]:text-red-600 dark:data-[state=active]:text-red-400"
+              className="data-[state=active]:text-red-600 dark:data-[state=active]:text-red-400 whitespace-nowrap shrink-0 snap-start"
             >
               Appealed Tasks
               {appealedIssues.length > 0 ? (
@@ -147,7 +150,10 @@ export default function OfficialDashboard() {
               )}
             </TabsTrigger>
 
-            <TabsTrigger value="resolved">
+            <TabsTrigger
+              value="resolved"
+              className="whitespace-nowrap shrink-0 snap-start"
+            >
               Resolved History
               <Badge variant="secondary" className="ml-2 bg-background">
                 {resolvedIssues.length}

@@ -479,6 +479,7 @@ export function OfficialIssueCard({
                           src={issue.images[0].url || issue.images[0]}
                           alt="Before evidence"
                           fill
+                          sizes="(max-width: 768px) 100vw, 50vw"
                           className="object-contain bg-black/20"
                         />
                       </div>
@@ -702,6 +703,7 @@ export function OfficialIssueCard({
                   src={issue.images[0].url || issue.images[0]}
                   alt="Original Issue evidence"
                   fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-contain"
                   priority
                 />
@@ -718,6 +720,7 @@ export function OfficialIssueCard({
                   src={issue.proof_of_work[0].image_url}
                   alt="Official Repair Proof"
                   fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-contain"
                   priority
                 />

@@ -1803,6 +1803,7 @@ export default function AdminDashboard() {
                       src={fetchedImages[0].url}
                       alt="Original Issue evidence"
                       fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
                       className="object-contain"
                       priority
                     />
@@ -1820,6 +1821,7 @@ export default function AdminDashboard() {
                         src={imageModalIssue.proof_of_work[0].image_url}
                         alt="Official Repair Proof"
                         fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
                         className="object-contain"
                         priority
                       />

@@ -108,7 +108,7 @@ export function IssueCard({
   );
   const [loadingImages, setLoadingImages] = useState(false);
 
-// 1. Check if user is the reporter
+  // 1. Check if user is the reporter
   const isReporter = !!(
     (currentUserEmail &&
       issue.reporter_email &&
@@ -125,7 +125,8 @@ export function IssueCard({
   const isExpired = Date.now() - lastUpdated > SEVEN_DAYS_MS;
 
   // 4. Final Verification check!
-  const canVerify = isAuthorizedToAppeal && issue.status === "closed" && !isExpired;
+  const canVerify =
+    isAuthorizedToAppeal && issue.status === "closed" && !isExpired;
 
   useEffect(() => {
     setHasUpvoted(initialHasUpvoted);
@@ -341,6 +342,7 @@ export function IssueCard({
                       src={fetchedImages[0].url}
                       alt="Original Issue evidence"
                       fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
                       className="object-contain"
                       priority
                     />
@@ -357,6 +359,7 @@ export function IssueCard({
                       src={issue.proof_of_work[0].image_url}
                       alt="Official Repair Proof"
                       fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
                       className="object-contain"
                       priority
                     />
