@@ -28,6 +28,7 @@ let query = supabase
         *,
         images:issue_images(url),
         vote_count:votes(count),
+        proof_of_work(*),
         status_changes:status_history(
            to_status,
            changed_at,
