@@ -31,11 +31,6 @@ export function LoginForm({
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const supabase = createClient();
-    console.log("URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.log(
-      "PUB KEY:",
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.slice(0, 12)
-    );
 
     setIsLoading(true);
     setError(null);
@@ -46,7 +41,11 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
+
+      // 1. THE FIX: Cache clear karo aur server ko batao ki cookie aa gayi hai!
+      router.refresh();
+
+      // 2. Ab redirect karo
       router.push("/");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
