@@ -81,7 +81,7 @@ export async function POST(req: Request) {
   // Insert issue
   const { data: issue, error } = await admin
     .from('issues')
-    .insert([{ description, flagged, tags, latitude, longitude, reporter_email: user.email,reporter_id:user.id,status: 'pending_moderation' }])
+    .insert([{ description, flagged, tags, latitude, longitude, reporter_email: user.email,reporter_id:user.id,status: 'active' }])
     .select('*, departments(*)')
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
@@ -142,10 +142,7 @@ export async function GET(request: Request) {
     
     if (statusFilter && statusFilter !== 'all') {
       query = query.eq('status', statusFilter)
-    } else {
-      // Hide unmoderated and spam issues from the "All Status" public feed
-      query = query.not('status', 'in', '("pending_moderation","spam")')
-    }
+    } 
     
     const { data: issues, error } = await query
     

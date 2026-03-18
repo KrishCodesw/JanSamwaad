@@ -1,160 +1,55 @@
-# JanSamwaad – Crowdsourced Civic Issue Reporting
+<div align="center">
 
-> JanSamwaad is a civic-tech platform that enables citizens to report local civic issues, see them on a live map, and track how authorities respond over time.
+# JanSamwaad
+**Civic Issue Reporting and Resolution Management Platform**
 
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
+[![Gemini AI](https://img.shields.io/badge/Gemini_AI-Spam_Filter-4285F4?style=for-the-badge&logo=google)](https://ai.google.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 
-## About
+[Live Demo](https://jansamwaad.vercel.app) | [Report Bug](https://github.com/your-username/jansamwaad/issues) | [Request Feature](https://github.com/your-username/jansamwaad/issues)
 
-JanSamwaad is designed to make everyday civic issues like potholes, garbage, broken street lights, and water problems visible, transparent, and easier to resolve collaboratively. By providing a unified platform for citizens, authorities, and NGOs, we aim to improve accountability and accelerate issue resolution.
+</div>
 
----
+## Overview
+JanSamwaad is a civic technology platform designed to facilitate the reporting and management of local infrastructure and maintenance issues. It provides a centralized system for citizens to submit reports and for municipal authorities to track, verify, and resolve these issues using automated routing and moderation workflows.
 
-## Problem and Vision
+## System Features
 
-### The Problem
+### Automated Spam Mitigation and User Moderation
+* **Heuristic Filtering:** Implements real-time velocity tracking and keyword filtering to reject invalid or malicious submissions at the application layer.
+* **Asynchronous Moderation:** Suspicious reports are placed in a moderation queue and processed via background cron jobs using the Google Gemini API.
+* **Policy Enforcement:** Automated suspension system for user accounts that exceed predefined submission violation thresholds.
 
-Citizens face everyday civic issues but current channels are often:
+### Spatial Data Routing
+* **Geospatial Assignment:** Utilizes Supabase PostGIS to automatically route submitted issues to the correct municipal department or administrative ward based on geographic coordinates.
 
-- **Fragmented** – Different numbers/apps for different departments
-- **Non-transparent** – No clear status, no way to track progress
-- **Slow** – No prioritization, no data-driven planning
+### Evidence and Verification Workflow
+* **Issue Reporting:** Requires photographic evidence and precise geolocation data for all new submissions.
+* **Resolution Proof:** Mandates photographic confirmation and operational notes from authorities upon marking an issue as resolved.
+* **Citizen Review:** Provides a strict 7-day review period for reporters to appeal the resolution status if the physical issue remains unaddressed.
 
-This leads to frustration, duplicate complaints, and poor accountability.
+### Role-Based Access and Interfaces
+* **Citizen Interface:** Features interactive map views, radius-based spatial filtering, and personal submission tracking.
+* **Official Console:** Provides secure, segregated queues for pending, appealed, and resolved tasks with administrative state management controls.
 
-### The Vision
-
-JanSamwaad aims to become a single unified interface where:
-
-- **Citizens** can easily report local problems with location and photos
-- **Issues** are mapped, prioritized, and routed to the right authority
-- **Progress** is visible to everyone, building trust and accountability
-- **NGOs and civic groups** can use data to drive campaigns and advocacy
-
----
-
-## Core Features
-
-### Citizen Features
-
-####  Report an Issue
-
-- Submit a title, description, and category (pothole, garbage, water, electricity, etc.)
-- Attach one photo as evidence
-- The exact location is auto-fetched and submitted with the report
-- See a confirmation with a unique issue ID
-
-####  Issues Near You
-
-- Interactive map (Leaflet/OpenStreetMap style) showing issues around the user
-- Colored markers or pins by status (e.g., Open / In Progress / Resolved)
-- Quick filters (category, status, distance)
-- List view of nearby issues with concise cards
-
-####  My Issues
-
-- Personal dashboard with all issues reported by the logged-in user
-- Status timeline for each issue (Submitted → In Progress → Resolved → Verified)
-
-####  Real-time Updates
-
-Notifications (email/SMS/WhatsApp, depending on your implementation) when:
-- An issue is created
-- Status changes (acknowledged, in progress, resolved)
-- Deep links that open directly to the issue page
-
----
-
-### Admin/Official Features
-
-####  Issue Management Dashboard
-
-- Secure login for admins/officials through **RBAC** (Role Based Access Control)
-- Table of all issues with sorting and filters (status, category & date)
-- Quick view of details and photos
-- Ability to change status and add public updates
-
-####  Issue Lifecycle
-
-Configurable status flow, for example:
-```
-New → Acknowledged → In Progress → Resolved → Verified by Citizen / Rejected
-```
-
-- Status history with timestamps
-- Optional assignment to departments, wards, or officers *(In progress - currently under development)*
-
-####  Moderation & Validation
-
-- Queue of newly submitted issues that can be quickly validated
-- Option to reject spam/test issues with a reason visible to the citizen
-- Basic checks like minimum description, at least one evidence field, etc.
-
----
-
-### NGO & Community Features
-
-> **Note:** Optional / Roadmap features
-
-- Read-only dashboards for partner NGOs to monitor issues in their domain or geographies
-- Ability to "adopt" issues, mark involvement, or add NGO-specific updates
-- Aggregate statistics for campaigns (e.g., "100 garbage dumps cleaned in Ward X")
-
----
-
-## System Architecture
-
-### High-Level Overview
+## Technical Stack
 
 | Component | Technology |
-|-----------|------------|
-| **Frontend** | Next.js (React), TypeScript, Tailwind CSS, Leaflet (OpenStreetMap) for mapping |
-| **Backend** | Next.js API routes or Node.js/Express with REST endpoints |
-| **Database** | Supabase (PostgreSQL) |
-| **Authentication** | Email/password, Google auth plus admin roles |
-| **Notifications** | Email provider (e.g., SMTP, Resend), optional SMS/WhatsApp integration |
+|---|---|
+| **Frontend** | React 19, Next.js (App Router), Tailwind CSS, Shadcn UI |
+| **Backend** | Next.js Server Actions and API Routes |
+| **Database** | Supabase (PostgreSQL), PostGIS for Spatial Querying |
+| **Authentication** | Supabase Auth (Email/Password, OAuth) |
+| **Moderation** | Google Generative AI SDK |
+| **Mapping** | React-Leaflet, OpenStreetMap |
 
-### Logical Components
+## Local Development Setup
 
-1. **Client App** – UI components, forms, map view, state management
-2. **API Layer** – Authentication, authorization, issue CRUD, listing & search, admin actions
-3. **Geo Services** – Geospatial queries (issues near location/map bounds), clustering/pagination
-4. **Notification Service** – Triggered on issue creation and status changes
-5. **Admin Panel** – Protected pages and endpoints for validation and lifecycle management
+Follow these instructions to configure the project locally.
 
----
-
-##  Getting Started (Local Setup)
-
-1. Clone the repo
-```
-git clone https://github.com/your-username/jansamwaad.git
+### 1. Clone the Repository
+```bash
+git clone [https://github.com/your-username/jansamwaad.git](https://github.com/your-username/jansamwaad.git)
 cd jansamwaad
-```
-
-2. Install dependencies
-```
-npm install
-# or
-pnpm install
-```
-
-3. Create a .env.local file (or equivalent) with values
-
-4. Run database migrations (prisma commands)
-
-5. Start development server 
-```
-npm run dev
-```
-
-##  Contributing
-
-Contributing, suggestions, and issue reports are welcome.
-
-Open an issue describing the bug/feature clearly.
-
-For major changes, discuss in an issue first so design decisions are aligned.
-
-Follow existing code style and include basic tests where relevant.
-
----
