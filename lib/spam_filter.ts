@@ -1,4 +1,9 @@
-const words_to_be_eliminated=["shit","etc."]
+import {Filter} from 'bad-words';
+
+const filter=new Filter()
+
+filter.addWords("shit","etc.")
+
 
 export function FilterSpamRegex(description:string):{isSpam:boolean;reason:string}{
     const text=description.toLocaleLowerCase().trim()
@@ -11,9 +16,8 @@ export function FilterSpamRegex(description:string):{isSpam:boolean;reason:strin
     if(/(.)\1{4,}/.test(text)){
      return { isSpam: true, reason: "Description contains excessive repeating characters." };
     }
-    const containsBadWords = words_to_be_eliminated.some(word => text.includes(word));
-  if (containsBadWords) {
-    return { isSpam: true, reason: "Description contains inappropriate language." };
+    if (filter.isProfane(text)) {
+    return { isSpam: true, reason: "Description contains inappropriate language or prohibited keywords." };
   }
   return { isSpam: false,reason:"All checks passed!" };
 }
