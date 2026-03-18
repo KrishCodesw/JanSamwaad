@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { FilterSpamRegex } from '@/lib/spam_filter'
 
 
 export async function POST(req: Request) {
@@ -13,6 +14,19 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient()
+  //Check whether user is banned 
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('is_banned, spam_strikes')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.is_banned) {
+    return NextResponse.json(
+      { error: 'Your account has been suspended for violating community guidelines.' },
+      { status: 403 }
+    )
+  }
 
   const body = await req.json().catch(() => null)
   if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
@@ -35,10 +49,39 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Missing or invalid fields' }, { status: 400 })
   }
 
+  //Rate limit 
+
+  const twoMinutesAgo=new Date(Date.now()-2*60*1000).toISOString()
+  const { count: recentIssuesCount } = await admin
+    .from('issues')
+    .select('*', { count: 'exact', head: true })
+    .eq('reporter_id', user.id) // Checks this specific user
+    .gte('created_at', twoMinutesAgo)
+
+  if (recentIssuesCount && recentIssuesCount >= 3) {
+    await addStrikeToUser(admin, user.id, profile?.spam_strikes)
+    return NextResponse.json(
+      { error: 'You are submitting issues too fast. Please wait a few minutes.' }, 
+      { status: 429 }
+    )
+  }
+
+  const fastCheck = FilterSpamRegex(description)
+  
+  if (fastCheck.isSpam) {
+    await addStrikeToUser(admin, user.id, profile?.spam_strikes)
+    return NextResponse.json(
+      { error: `Submission rejected: ${fastCheck.reason}` }, 
+      { status: 406 }
+    )
+  }
+
+
+
   // Insert issue
   const { data: issue, error } = await admin
     .from('issues')
-    .insert([{ description, flagged, tags, latitude, longitude, reporter_email: user.email }])
+    .insert([{ description, flagged, tags, latitude, longitude, reporter_email: user.email,reporter_id:user.id,status: 'pending_moderation' }])
     .select('*, departments(*)')
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
@@ -99,6 +142,9 @@ export async function GET(request: Request) {
     
     if (statusFilter && statusFilter !== 'all') {
       query = query.eq('status', statusFilter)
+    } else {
+      // Hide unmoderated and spam issues from the "All Status" public feed
+      query = query.not('status', 'in', '("pending_moderation","spam")')
     }
     
     const { data: issues, error } = await query
@@ -121,3 +167,16 @@ export async function GET(request: Request) {
   }
 }
 
+
+async function addStrikeToUser(adminClient: any, userId: string, currentStrikes: number = 0) {
+  const newStrikes = currentStrikes + 1;
+  const isBanned = newStrikes >= 3;
+
+  await adminClient
+    .from("profiles")
+    .update({ 
+      spam_strikes: newStrikes,
+      is_banned: isBanned 
+    })
+    .eq("id", userId);
+}
