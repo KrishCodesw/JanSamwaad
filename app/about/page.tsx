@@ -1,0 +1,5 @@
+export const metadata = { title: "About JanSamvaad" };
+
+export default function AboutPage() {
+  return <main className="max-w-3xl mx-auto px-6 py-16"><h1 className="text-4xl font-bold">About JanSamvaad</h1><p className="mt-6 leading-8">JanSamvaad is a civic issue reporting and resolution platform designed to connect citizens, communities, and public officials around local problems. Citizens can report issues with descriptions and locations, discover issues affecting their area, and follow progress as responsible departments address them. The platform is intended to improve visibility, accountability, and communication around everyday civic concerns. JanSamvaad combines a human-facing web experience with machine-readable public resources so people and software agents can discover information consistently.</p><p className="mt-4 leading-8">The service is focused on civic participation and issue tracking. It is not an emergency service and should not replace emergency response channels. Public issue information is exposed through the platform&apos;s documented read API, while issue submission is protected by authentication and abuse controls.</p></main>;
+}
