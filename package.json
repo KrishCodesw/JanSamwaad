@@ -4,7 +4,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:agent": "node scripts/verify-agent-readiness.mjs"
   },
   "dependencies": {
     "@pranamphd/digipin": "^0.1.0",
