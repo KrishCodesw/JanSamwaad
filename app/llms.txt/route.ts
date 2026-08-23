@@ -37,7 +37,7 @@ export function GET() {
   return new NextResponse(body, {
     status: 200,
     headers: {
-      "Content-Type": "text/plain; charset=utf-8",
+      "Content-Type": "text/markdown; charset=utf-8",
       "Cache-Control": "public, max-age=3600",
       "Vary": "Accept, Accept-Encoding",
     },
